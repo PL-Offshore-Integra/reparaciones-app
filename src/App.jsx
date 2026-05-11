@@ -397,15 +397,23 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
     anulado: todosItems.filter(it => it.estado === "anulado").length,
   };
 
-  const solFiltradas = solicitudes.filter(sol => {
-    const items = sol.ssrr_items || [];
-    if (filtroEstado && !items.some(it => it.estado === filtroEstado)) return false;
-    if (busqueda) {
-      const q = busqueda.toLowerCase();
-      if (!items.some(it => it.descripcion?.toLowerCase().includes(q)) && !sol.numero?.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const solFiltradas = solicitudes
+    .map(sol => {
+      let items = sol.ssrr_items || [];
+      if (filtroEstado) {
+        items = items.filter(it => it.estado === filtroEstado);
+      }
+      if (busqueda) {
+        const q = busqueda.toLowerCase();
+        if (sol.numero?.toLowerCase().includes(q)) {
+          // si el número de solicitud coincide, mostrar todos los ítems (ya filtrados por estado)
+        } else {
+          items = items.filter(it => it.descripcion?.toLowerCase().includes(q));
+        }
+      }
+      return { ...sol, ssrr_items: items };
+    })
+    .filter(sol => sol.ssrr_items.length > 0);
 
   return (
     <div>
