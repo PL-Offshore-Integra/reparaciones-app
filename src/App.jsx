@@ -397,23 +397,15 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
     anulado: todosItems.filter(it => it.estado === "anulado").length,
   };
 
-  const solFiltradas = solicitudes
-    .map(sol => {
-      let items = sol.ssrr_items || [];
-      if (filtroEstado) {
-        items = items.filter(it => it.estado === filtroEstado);
-      }
-      if (busqueda) {
-        const q = busqueda.toLowerCase();
-        if (sol.numero?.toLowerCase().includes(q)) {
-          // si el número de solicitud coincide, mostrar todos los ítems (ya filtrados por estado)
-        } else {
-          items = items.filter(it => it.descripcion?.toLowerCase().includes(q));
-        }
-      }
-      return { ...sol, ssrr_items: items };
-    })
-    .filter(sol => sol.ssrr_items.length > 0);
+  const solFiltradas = solicitudes.filter(sol => {
+    const items = sol.ssrr_items || [];
+    if (filtroEstado && !items.some(it => it.estado === filtroEstado)) return false;
+    if (busqueda) {
+      const q = busqueda.toLowerCase();
+      if (!items.some(it => it.descripcion?.toLowerCase().includes(q)) && !sol.numero?.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -453,16 +445,123 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
   );
 }
 
+// Mapa de email de barco → nombre de barco
+const BARCO_POR_EMAIL = {
+  "golondrinademar@paranalogistica.com.ar": "Golondrina de Mar",
+  "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
+};
+
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return setError("Completá usuario y contraseña");
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError("Usuario o contraseña incorrectos");
+      setLoading(false);
+    } else {
+      onLogin();
+    }
+  };
+
+  const handleKey = (e) => { if (e.key === "Enter") handleLogin(); };
+
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "linear-gradient(135deg, #213363 0%, #1a2a5e 50%, #0f1d4a 100%)",
+      fontFamily: "var(--sans)"
+    }}>
+      <style>{CSS}</style>
+      <div style={{
+        background: "#fff", borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 380,
+        boxShadow: "0 8px 40px rgba(0,0,0,0.25)"
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🔧</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>Reparaciones</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1 }}>Terra Mare Group</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="fg">
+            <label>Usuario</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={handleKey} placeholder="correo@paranalogistica.com.ar" autoFocus />
+          </div>
+          <div className="fg">
+            <label>Contraseña</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              onKeyDown={handleKey} placeholder="••••••••" />
+          </div>
+          {error && <div style={{ fontSize: 12, color: "var(--danger)", background: "#FEE2E2", padding: "8px 12px", borderRadius: 6 }}>{error}</div>}
+          <button className="btn btn-primary" onClick={handleLogin} disabled={loading}
+            style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [session, setSession] = useState(undefined);
+  const [userEmail, setUserEmail] = useState("");
+  const [barcosPermitidos, setBarcosPermitidos] = useState(BARCOS);
   const [barco, setBarco] = useState("Golondrina de Mar");
   const [notif, setNotif] = useState(null);
   const [nuevaModal, setNuevaModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const setupSession = (sess) => {
+    setSession(sess);
+    if (sess) {
+      const email = sess.user.email;
+      setUserEmail(email);
+      const barcoDelUsuario = BARCO_POR_EMAIL[email];
+      if (barcoDelUsuario) {
+        setBarcosPermitidos([barcoDelUsuario]);
+        setBarco(barcoDelUsuario);
+      } else {
+        setBarcosPermitidos(BARCOS);
+        setBarco(BARCOS[0]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setupSession(session || null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setupSession(session || null));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setUserEmail("");
+  };
+
   const notify = useCallback((text, type = "info") => {
     setNotif({ text, type });
     setTimeout(() => setNotif(null), 4000);
   }, []);
+
+  if (session === undefined) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#213363" }}>
+        <style>{CSS}</style>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "rgba(255,255,255,.4)", letterSpacing: 2 }}>Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!session) return <LoginScreen onLogin={() => {}} />;
 
   return (
     <>
@@ -480,8 +579,8 @@ export default function App() {
           </div>
 
           <div className="nav-section">Barcos</div>
-          {BARCOS.map(b => (
-            <div key={b} className={`ni ${barco === b ? "active" : ""}`} onClick={() => setBarco(b)}>
+          {barcosPermitidos.map(b => (
+            <div key={b} className={`ni ${barco === b ? "active" : ""}`} onClick={() => barcosPermitidos.length > 1 && setBarco(b)}>
               <span className="ni-icon">🚢</span>
               <span style={{ fontSize: 11 }}>{b}</span>
             </div>
@@ -505,7 +604,12 @@ export default function App() {
               <span className="ni-icon" style={{ fontSize: 11 }}>←</span>
               <span style={{ fontSize: 11 }}>Volver al ERP</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.0</div>
+            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }}
+              onClick={handleLogout}>
+              <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span>
+              <span style={{ fontSize: 11 }}>Cerrar sesión</span>
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.1</div>
           </div>
         </nav>
 
@@ -513,8 +617,12 @@ export default function App() {
           <div className="topbar">
             <div className="topbar-title">{barco} — Panel de control</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#DBEAFE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "var(--blue)", fontWeight: 700 }}>ST</div>
-              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>Superintendente</span>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#DBEAFE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "var(--blue)", fontWeight: 700 }}>
+                {userEmail ? userEmail[0].toUpperCase() : "U"}
+              </div>
+              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+                {userEmail || "Usuario"}
+              </span>
             </div>
           </div>
           <div className="content">
