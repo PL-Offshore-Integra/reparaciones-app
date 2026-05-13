@@ -11,6 +11,7 @@ const ESTADOS = {
 };
 const TIPO_REALIZACION = ["Taller externo", "Personal propio", "JDM", "Capitán", "Otro"];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
+const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -132,6 +133,21 @@ const api = {
     const { error } = await supabase.from("ssrr_items").update({ ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) throw error;
   },
+  async enviarNotificacion(payload) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${SUPABASE_URL}/functions/v1/enviar-notificacion-ssrr`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) {
+      console.error("Error enviando notificación:", e);
+    }
+  },
 };
 
 function Notif({ msg, onClose }) {
@@ -235,13 +251,25 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
     setSaving(true);
     try {
       const sol = await api.crearSolicitud({ ...form, status: "abierta" });
-      await api.crearItems(itemsValidos.map((it, i) => ({
+      const itemsCreados = itemsValidos.map((it, i) => ({
         solicitud_id: sol.id,
         numero_item: `${form.numero}-${i + 1}`,
         descripcion: it.descripcion,
         obs_capitan: it.obs_capitan || null,
         estado: "pendiente",
-      })));
+      }));
+      await api.crearItems(itemsCreados);
+
+      // Enviar notificación por mail
+      await api.enviarNotificacion({
+        barco: form.barco,
+        numero: form.numero,
+        fecha: fmtDate(form.fecha_emision),
+        emitido_por: form.emitido_por,
+        observaciones: form.observaciones_generales || "",
+        items: itemsCreados,
+      });
+
       notify("SSRR creada correctamente", "success");
       onSave();
     } catch (e) { alert("Error: " + e.message); }
@@ -373,7 +401,7 @@ function SolicitudCard({ sol, onItemClick }) {
   );
 }
 
-function PagePanel({ barco, onNuevaSolicitud, notify }) {
+function PagePanel({ barco, notify }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemModal, setItemModal] = useState(null);
@@ -397,15 +425,19 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
     anulado: todosItems.filter(it => it.estado === "anulado").length,
   };
 
-  const solFiltradas = solicitudes.filter(sol => {
-    const items = sol.ssrr_items || [];
-    if (filtroEstado && !items.some(it => it.estado === filtroEstado)) return false;
-    if (busqueda) {
-      const q = busqueda.toLowerCase();
-      if (!items.some(it => it.descripcion?.toLowerCase().includes(q)) && !sol.numero?.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const solFiltradas = solicitudes
+    .map(sol => {
+      let items = sol.ssrr_items || [];
+      if (filtroEstado) items = items.filter(it => it.estado === filtroEstado);
+      if (busqueda) {
+        const q = busqueda.toLowerCase();
+        if (!sol.numero?.toLowerCase().includes(q)) {
+          items = items.filter(it => it.descripcion?.toLowerCase().includes(q));
+        }
+      }
+      return { ...sol, ssrr_items: items };
+    })
+    .filter(sol => sol.ssrr_items.length > 0);
 
   return (
     <div>
@@ -445,13 +477,12 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
   );
 }
 
-// Mapa de email de barco → nombre de barco
 const BARCO_POR_EMAIL = {
   "golondrinademar@paranalogistica.com.ar": "Golondrina de Mar",
   "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
 };
 
-function LoginScreen({ onLogin }) {
+function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -465,8 +496,6 @@ function LoginScreen({ onLogin }) {
     if (error) {
       setError("Usuario o contraseña incorrectos");
       setLoading(false);
-    } else {
-      onLogin();
     }
   };
 
@@ -476,32 +505,25 @@ function LoginScreen({ onLogin }) {
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
       background: "linear-gradient(135deg, #213363 0%, #1a2a5e 50%, #0f1d4a 100%)",
-      fontFamily: "var(--sans)"
     }}>
       <style>{CSS}</style>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 380,
-        boxShadow: "0 8px 40px rgba(0,0,0,0.25)"
-      }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 380, boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>🔧</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>Reparaciones</div>
-          <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1 }}>Terra Mare Group</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#213363", marginBottom: 4 }}>Reparaciones</div>
+          <div style={{ fontSize: 11, color: "#6381A7", letterSpacing: 1 }}>Terra Mare Group</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="fg">
             <label>Usuario</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              onKeyDown={handleKey} placeholder="correo@paranalogistica.com.ar" autoFocus />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey} placeholder="correo@paranalogistica.com.ar" autoFocus />
           </div>
           <div className="fg">
             <label>Contraseña</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              onKeyDown={handleKey} placeholder="••••••••" />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey} placeholder="••••••••" />
           </div>
-          {error && <div style={{ fontSize: 12, color: "var(--danger)", background: "#FEE2E2", padding: "8px 12px", borderRadius: 6 }}>{error}</div>}
-          <button className="btn btn-primary" onClick={handleLogin} disabled={loading}
-            style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
+          {error && <div style={{ fontSize: 12, color: "#C0392B", background: "#FEE2E2", padding: "8px 12px", borderRadius: 6 }}>{error}</div>}
+          <button className="btn btn-primary" onClick={handleLogin} disabled={loading} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
         </div>
@@ -561,7 +583,7 @@ export default function App() {
     );
   }
 
-  if (!session) return <LoginScreen onLogin={() => {}} />;
+  if (!session) return <LoginScreen />;
 
   return (
     <>
@@ -599,17 +621,15 @@ export default function App() {
           <div style={{ flex: 1 }} />
 
           <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,.1)" }}>
-            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none" }}
-              onClick={() => window.open(ERP_URL, "_self")}>
+            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none" }} onClick={() => window.open(ERP_URL, "_self")}>
               <span className="ni-icon" style={{ fontSize: 11 }}>←</span>
               <span style={{ fontSize: 11 }}>Volver al ERP</span>
             </div>
-            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }}
-              onClick={handleLogout}>
+            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }} onClick={handleLogout}>
               <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span>
               <span style={{ fontSize: 11 }}>Cerrar sesión</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.1</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.2</div>
           </div>
         </nav>
 
@@ -620,17 +640,11 @@ export default function App() {
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#DBEAFE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "var(--blue)", fontWeight: 700 }}>
                 {userEmail ? userEmail[0].toUpperCase() : "U"}
               </div>
-              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
-                {userEmail || "Usuario"}
-              </span>
+              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>{userEmail || "Usuario"}</span>
             </div>
           </div>
           <div className="content">
-            <PagePanel
-              key={`${barco}-${refreshKey}`}
-              barco={barco}
-              notify={notify}
-            />
+            <PagePanel key={`${barco}-${refreshKey}`} barco={barco} notify={notify} />
           </div>
         </div>
       </div>
