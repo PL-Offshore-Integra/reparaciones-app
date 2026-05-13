@@ -12,6 +12,7 @@ const ESTADOS = {
 const TIPO_REALIZACION = ["Taller externo", "Personal propio", "JDM", "Capitán", "Otro"];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
 const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -135,12 +136,12 @@ const api = {
   },
   async enviarNotificacion(payload) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       await fetch(`${SUPABASE_URL}/functions/v1/enviar-notificacion-ssrr`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
         },
         body: JSON.stringify(payload),
       });
