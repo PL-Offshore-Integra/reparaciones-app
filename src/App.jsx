@@ -136,7 +136,7 @@ const api = {
   },
   async enviarNotificacion(payload) {
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/enviar-notificacion-ssrr`, {
+      await fetch(`${SUPABASE_URL}/functions/v1/enviar_notificacion_SSRR`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
