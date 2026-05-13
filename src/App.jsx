@@ -10,6 +10,8 @@ const ESTADOS = {
   anulado: { label: "Anulado", short: "A", color: "b-gray" },
 };
 const TIPO_REALIZACION = ["Taller externo", "Personal propio", "JDM", "Capitán", "Otro"];
+const AREAS = ["Cubierta", "Máquinas"];
+const TIPOS_REPARACION = ["Correctiva", "Preventiva"];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
 const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
@@ -51,6 +53,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .b-purple{background:#EDE9FE;color:#4C1D95;border:1px solid #DDD6FE}
 .b-gray{background:#F3F4F6;color:#6B7280;border:1px solid #E5E7EB}
 .b-red{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.b-teal{background:#CCFBF1;color:#0F766E;border:1px solid #99F6E4}
+.b-orange{background:#FFEDD5;color:#9A3412;border:1px solid #FED7AA}
 .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.3px;padding:7px 14px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;text-transform:uppercase}
 .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--navy)}
 .btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}.btn-ghost:hover{color:var(--text);background:var(--surface2)}
@@ -74,7 +78,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .fg textarea{resize:vertical;min-height:60px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px}
 .form-section{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--blue);text-transform:uppercase;margin:18px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--light)}
+.toggle-group{display:flex;gap:8px}
+.toggle-btn{flex:1;padding:8px 12px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;letter-spacing:.5px}
+.toggle-btn.selected{border-color:var(--blue);background:var(--blue);color:#fff}
+.toggle-btn.selected.cubierta{border-color:#0E7490;background:#0E7490}
+.toggle-btn.selected.maquinas{border-color:#6B4FA0;background:#6B4FA0}
+.toggle-btn.selected.correctiva{border-color:#C0392B;background:#C0392B}
+.toggle-btn.selected.preventiva{border-color:#1E7E4A;background:#1E7E4A}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px}
 .stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
@@ -113,13 +125,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
 const today = () => new Date().toISOString().split("T")[0];
 
+// Ordenar solicitudes por número (ej: 7/26 > 6/26)
+const ordenarSolicitudes = (sols) => {
+  return [...sols].sort((a, b) => {
+    const [numA, anioA] = (a.numero || "0/0").split("/").map(Number);
+    const [numB, anioB] = (b.numero || "0/0").split("/").map(Number);
+    if (anioA !== anioB) return anioB - anioA;
+    return numB - numA;
+  });
+};
+
 const api = {
   async getSolicitudes(barco) {
-    let q = supabase.from("ssrr_solicitudes").select("*, ssrr_items(*)").order("fecha_emision", { ascending: false }).order("numero", { ascending: false });
+    let q = supabase.from("ssrr_solicitudes").select("*, ssrr_items(*)");
     if (barco) q = q.eq("barco", barco);
     const { data, error } = await q;
     if (error) throw error;
-    return data || [];
+    return ordenarSolicitudes(data || []);
   },
   async crearSolicitud(sol) {
     const { data, error } = await supabase.from("ssrr_solicitudes").insert([sol]).select().single();
@@ -165,9 +187,41 @@ function FG({ label, hint, children, full }) {
   </div>;
 }
 
+function ToggleGroup({ label, options, value, onChange, colorClass }) {
+  return (
+    <div className="fg">
+      {label && <label>{label}</label>}
+      <div className="toggle-group">
+        {options.map(opt => (
+          <button
+            key={opt}
+            className={`toggle-btn ${value === opt ? `selected ${colorClass?.[opt] || ""}` : ""}`}
+            onClick={() => onChange(opt)}
+            type="button"
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BadgeEstado({ estado }) {
   const e = ESTADOS[estado] || { label: estado, color: "b-gray" };
   return <span className={`badge ${e.color}`}>{e.label}</span>;
+}
+
+function BadgeArea({ area }) {
+  if (!area) return null;
+  const color = area === "Cubierta" ? "b-teal" : "b-purple";
+  return <span className={`badge ${color}`}>{area}</span>;
+}
+
+function BadgeTipoRep({ tipo }) {
+  if (!tipo) return null;
+  const color = tipo === "Correctiva" ? "b-red" : "b-green";
+  return <span className={`badge ${color}`}>{tipo}</span>;
 }
 
 function ItemModal({ item, onClose, onSave }) {
@@ -194,6 +248,13 @@ function ItemModal({ item, onClose, onSave }) {
         </div>
         <div className="mbody">
           <div className="form-grid">
+            <ToggleGroup
+              label="Tipo de reparación"
+              options={TIPOS_REPARACION}
+              value={form.tipo_reparacion || ""}
+              onChange={v => set("tipo_reparacion", v)}
+              colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }}
+            />
             <FG label="Estado *">
               <select value={form.estado} onChange={e => set("estado", e.target.value)}>
                 {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -234,17 +295,19 @@ function ItemModal({ item, onClose, onSave }) {
 function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   const [form, setForm] = useState({
     barco: barcoDefault || "Golondrina de Mar",
+    area: "",
     numero: "", fecha_emision: today(), emitido_por: "", observaciones_generales: "",
   });
-  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "" }]);
+  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "", tipo_reparacion: "" }]);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "" }]);
+  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "", tipo_reparacion: "" }]);
   const removeItem = (id) => setItems(prev => prev.filter(it => it.id !== id));
   const updateItem = (id, k, v) => setItems(prev => prev.map(it => it.id === id ? { ...it, [k]: v } : it));
 
   const handleSave = async () => {
+    if (!form.area) return alert("Seleccioná el área (Cubierta o Máquinas)");
     if (!form.numero.trim()) return alert("Ingresá el número de solicitud");
     if (!form.emitido_por.trim()) return alert("Ingresá quién emite la solicitud");
     const itemsValidos = items.filter(it => it.descripcion.trim());
@@ -257,20 +320,19 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
         numero_item: `${form.numero}-${i + 1}`,
         descripcion: it.descripcion,
         obs_capitan: it.obs_capitan || null,
+        tipo_reparacion: it.tipo_reparacion || null,
         estado: "pendiente",
       }));
       await api.crearItems(itemsCreados);
-
-      // Enviar notificación por mail
       await api.enviarNotificacion({
         barco: form.barco,
+        area: form.area,
         numero: form.numero,
         fecha: fmtDate(form.fecha_emision),
         emitido_por: form.emitido_por,
         observaciones: form.observaciones_generales || "",
         items: itemsCreados,
       });
-
       notify("SSRR creada correctamente", "success");
       onSave();
     } catch (e) { alert("Error: " + e.message); }
@@ -292,16 +354,25 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 {BARCOS.map(b => <option key={b}>{b}</option>)}
               </select>
             </FG>
-            <FG label="N° de solicitud *" hint="Ej: 06-2025">
-              <input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 06-2025" />
+            <FG label="N° de solicitud *" hint="Ej: 7/26">
+              <input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 7/26" />
             </FG>
             <FG label="Fecha de emisión *">
               <input type="date" value={form.fecha_emision} onChange={e => set("fecha_emision", e.target.value)} />
             </FG>
           </div>
-          <FG label="Emitido por (JDM / Capitán) *">
-            <input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" />
-          </FG>
+          <div className="form-grid mb12">
+            <ToggleGroup
+              label="Área *"
+              options={AREAS}
+              value={form.area}
+              onChange={v => set("area", v)}
+              colorClass={{ Cubierta: "cubierta", "Máquinas": "maquinas" }}
+            />
+            <FG label="Emitido por (JDM / Capitán) *">
+              <input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" />
+            </FG>
+          </div>
           <FG label="Observaciones generales" full>
             <textarea value={form.observaciones_generales} onChange={e => set("observaciones_generales", e.target.value)} placeholder="Observaciones generales..." style={{ marginTop: 8 }} />
           </FG>
@@ -321,6 +392,13 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 <FG label="Descripción *" full>
                   <input value={it.descripcion} onChange={e => updateItem(it.id, "descripcion", e.target.value)} placeholder="Descripción del trabajo a realizar..." />
                 </FG>
+                <ToggleGroup
+                  label="Tipo de reparación"
+                  options={TIPOS_REPARACION}
+                  value={it.tipo_reparacion}
+                  onChange={v => updateItem(it.id, "tipo_reparacion", v)}
+                  colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }}
+                />
                 <FG label="Observaciones del JDM/Capitán" full>
                   <input value={it.obs_capitan || ""} onChange={e => updateItem(it.id, "obs_capitan", e.target.value)} placeholder="Observaciones opcionales..." />
                 </FG>
@@ -350,6 +428,7 @@ function SolicitudCard({ sol, onItemClick }) {
         <div>
           <div className="flex-gap">
             <span className="ssrr-num">SSRR N° {sol.numero}</span>
+            {sol.area && <BadgeArea area={sol.area} />}
             {pendientes > 0 && <span className="badge b-amber">{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
             {enProceso > 0 && <span className="badge b-blue">{enProceso} en proceso</span>}
           </div>
@@ -368,6 +447,7 @@ function SolicitudCard({ sol, onItemClick }) {
               <tr>
                 <th style={{ width: 70 }}>N°</th>
                 <th>Descripción</th>
+                <th style={{ width: 110 }}>Tipo Rep.</th>
                 <th style={{ width: 110 }}>Estado</th>
                 <th style={{ width: 130 }}>Obs. Capitán</th>
                 <th style={{ width: 150 }}>Obs. Superintendente</th>
@@ -378,11 +458,12 @@ function SolicitudCard({ sol, onItemClick }) {
             </thead>
             <tbody>
               {items.length === 0
-                ? <tr><td colSpan={8} style={{ textAlign: "center", padding: 20, color: "var(--muted2)" }}>Sin ítems</td></tr>
+                ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 20, color: "var(--muted2)" }}>Sin ítems</td></tr>
                 : items.map(it => (
                   <tr key={it.id} onClick={() => onItemClick(it)}>
                     <td className="item-num-cell">{it.numero_item}</td>
                     <td className="item-desc-cell">{it.descripcion}</td>
+                    <td><BadgeTipoRep tipo={it.tipo_reparacion} /></td>
                     <td><BadgeEstado estado={it.estado} /></td>
                     <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
                     <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
@@ -630,7 +711,7 @@ export default function App() {
               <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span>
               <span style={{ fontSize: 11 }}>Cerrar sesión</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.2</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.3</div>
           </div>
         </nav>
 
