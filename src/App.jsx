@@ -250,22 +250,83 @@ function BadgeTipoRep({ tipo }) {
 }
 
 // Componente de acciones del barco para cada ítem (botón cumplido + clip adjunto)
+function ModalCumplir({ item, onClose, onSave, notify }) {
+  const [form, setForm] = useState({ realizado_por: "", fecha_realizacion: today(), nro_remito: "" });
+  const [archivo, setArchivo] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef();
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    if (!form.realizado_por.trim()) return alert("Ingresá quién realizó el trabajo");
+    setSaving(true);
+    try {
+      let adjunto_url = item.adjunto_url || null;
+      if (archivo) adjunto_url = await api.subirAdjunto(item.id, archivo);
+      await api.actualizarItem(item.id, {
+        estado: "cumplido",
+        realizado_por: form.realizado_por,
+        fecha_realizacion: form.fecha_realizacion || null,
+        nro_remito: form.nro_remito || null,
+        adjunto_url,
+      });
+      notify("Ítem marcado como cumplido", "success");
+      onSave();
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ zIndex: 200 }}>
+      <div className="modal" style={{ maxWidth: 480 }}>
+        <div className="mhdr">
+          <div>
+            <div className="mtitle">Marcar como Cumplido</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{item.numero_item} — {item.descripcion}</div>
+          </div>
+          <button className="mclose" onClick={onClose}>✕</button>
+        </div>
+        <div className="mbody">
+          <div className="fg" style={{ marginBottom: 14 }}>
+            <label>Realizado por *</label>
+            <input value={form.realizado_por} onChange={e => set("realizado_por", e.target.value)} placeholder="Nombre / Empresa que realizó el trabajo" autoFocus />
+          </div>
+          <div className="form-grid">
+            <div className="fg">
+              <label>Fecha de realización</label>
+              <input type="date" value={form.fecha_realizacion} onChange={e => set("fecha_realizacion", e.target.value)} />
+            </div>
+            <div className="fg">
+              <label>N° de Remito</label>
+              <input value={form.nro_remito} onChange={e => set("nro_remito", e.target.value)} placeholder="Ej: 1-16190" />
+            </div>
+          </div>
+          <div className="fg">
+            <label>Adjunto (remito, foto, etc.)</label>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current.click()} type="button">
+                📎 {archivo ? archivo.name : "Seleccionar archivo"}
+              </button>
+              {archivo && <button onClick={() => setArchivo(null)} style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 14 }}>✕</button>}
+            </div>
+            <input ref={fileRef} type="file" style={{ display: "none" }} onChange={e => setArchivo(e.target.files[0] || null)} />
+          </div>
+        </div>
+        <div className="mftr">
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-success" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando..." : "✓ Confirmar cumplimiento"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ItemAccionesBarco({ item, onUpdated, notify }) {
+  const [modalCumplir, setModalCumplir] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileRef = useRef();
-
-  const handleCumplir = async (e) => {
-    e.stopPropagation();
-    if (item.estado === "cumplido") return;
-    if (!confirm("¿Marcar este ítem como Cumplido?")) return;
-    setLoading(true);
-    try {
-      await api.actualizarItem(item.id, { estado: "cumplido", fecha_realizacion: today() });
-      notify("Ítem marcado como cumplido", "success");
-      onUpdated();
-    } catch (err) { alert("Error: " + err.message); }
-    finally { setLoading(false); }
-  };
 
   const handleFileChange = async (e) => {
     e.stopPropagation();
@@ -284,14 +345,22 @@ function ItemAccionesBarco({ item, onUpdated, notify }) {
   return (
     <div className="item-card-actions" onClick={e => e.stopPropagation()}>
       {item.estado !== "cumplido" && (
-        <button className="cumplir-btn" onClick={handleCumplir} disabled={loading} title="Marcar como cumplido">
-          {loading ? "..." : "✓ Cumplido"}
+        <button className="cumplir-btn" onClick={() => setModalCumplir(true)} disabled={loading} title="Marcar como cumplido">
+          ✓ Cumplido
         </button>
       )}
       <button className={`clip-btn ${item.adjunto_url ? "has-file" : ""}`} onClick={() => fileRef.current.click()} disabled={loading} title={item.adjunto_url ? "Reemplazar adjunto" : "Subir adjunto"}>
         📎
       </button>
       <input ref={fileRef} type="file" style={{ display: "none" }} onChange={handleFileChange} />
+      {modalCumplir && (
+        <ModalCumplir
+          item={item}
+          notify={notify}
+          onClose={() => setModalCumplir(false)}
+          onSave={() => { setModalCumplir(false); onUpdated(); }}
+        />
+      )}
     </div>
   );
 }
