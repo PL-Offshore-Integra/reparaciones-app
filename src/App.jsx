@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./lib/supabase";
 
 const BARCOS = ["Golondrina de Mar", "Atlantic Dama"];
@@ -15,6 +15,11 @@ const TIPOS_REPARACION = ["Correctiva", "Preventiva"];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
 const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
+
+const BARCO_POR_EMAIL = {
+  "golondrinademar@paranalogistica.com.ar": "Golondrina de Mar",
+  "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
+};
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -57,6 +62,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .b-orange{background:#FFEDD5;color:#9A3412;border:1px solid #FED7AA}
 .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.3px;padding:7px 14px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;text-transform:uppercase}
 .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--navy)}
+.btn-success{background:var(--accent2);color:#fff;border-color:var(--accent2)}.btn-success:hover{background:#155a35}
 .btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}.btn-ghost:hover{color:var(--text);background:var(--surface2)}
 .btn-sm{padding:4px 10px;font-size:10px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
@@ -107,7 +113,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
 .items-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
 .items-table tr:last-child td{border-bottom:none}
-.items-table tr:hover td{background:var(--surface2);cursor:pointer}
+.items-table tr:hover td{background:var(--surface2)}
 .item-num-cell{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap}
 .item-desc-cell{font-size:12px;color:var(--text);max-width:240px}
 .item-obs-cell{font-size:10px;color:var(--muted);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -128,15 +134,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .detail-field{display:flex;flex-direction:column;gap:3px}
 .detail-label{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
 .detail-value{font-size:13px;color:var(--text);font-weight:500}
-.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s}
-.item-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(33,51,99,.1)}
+.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;transition:all .15s}
 .item-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.item-card-num{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600}
+.item-card-num{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0}
 .item-card-desc{font-size:13px;color:var(--text);font-weight:500;flex:1}
+.item-card-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
 .item-card-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .item-card-field{display:flex;flex-direction:column;gap:2px}
 .item-card-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase}
 .item-card-value{font-size:11px;color:var(--text)}
+.clip-btn{background:none;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--muted);font-size:14px;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.clip-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--surface)}
+.clip-btn.has-file{border-color:var(--accent2);color:var(--accent2)}
+.cumplir-btn{background:none;border:2px solid var(--accent2);border-radius:var(--r);padding:4px 10px;cursor:pointer;color:var(--accent2);font-size:10px;font-weight:700;font-family:var(--sans);text-transform:uppercase;letter-spacing:.5px;transition:all .15s}
+.cumplir-btn:hover{background:var(--accent2);color:#fff}
+.cumplir-btn:disabled{opacity:.4;cursor:not-allowed}
+.adjunto-link{font-size:10px;color:var(--blue);text-decoration:none;font-family:var(--mono);display:inline-flex;align-items:center;gap:3px}
+.adjunto-link:hover{text-decoration:underline}
 `;
 
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
@@ -176,15 +190,19 @@ const api = {
     const { error } = await supabase.from("ssrr_items").update({ ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) throw error;
   },
+  async subirAdjunto(itemId, file) {
+    const ext = file.name.split(".").pop();
+    const path = `${itemId}_${Date.now()}.${ext}`;
+    const { error: upError } = await supabase.storage.from("remitos").upload(path, file, { upsert: true });
+    if (upError) throw upError;
+    const { data } = supabase.storage.from("remitos").getPublicUrl(path);
+    return data.publicUrl;
+  },
   async enviarNotificacion(payload) {
     try {
       await fetch(`${SUPABASE_URL}/functions/v1/enviar_notificacion_SSRR`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "apikey": SUPABASE_ANON_KEY,
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify(payload),
       });
     } catch (e) { console.error("Error enviando notificación:", e); }
@@ -211,9 +229,7 @@ function ToggleGroup({ label, options, value, onChange, colorClass }) {
       {label && <label>{label}</label>}
       <div className="toggle-group">
         {options.map(opt => (
-          <button key={opt} className={`toggle-btn ${value === opt ? `selected ${colorClass?.[opt] || ""}` : ""}`} onClick={() => onChange(opt)} type="button">
-            {opt}
-          </button>
+          <button key={opt} className={`toggle-btn ${value === opt ? `selected ${colorClass?.[opt] || ""}` : ""}`} onClick={() => onChange(opt)} type="button">{opt}</button>
         ))}
       </div>
     </div>
@@ -224,18 +240,63 @@ function BadgeEstado({ estado }) {
   const e = ESTADOS[estado] || { label: estado, color: "b-gray" };
   return <span className={`badge ${e.color}`}>{e.label}</span>;
 }
-
 function BadgeArea({ area }) {
   if (!area) return null;
   return <span className={`badge ${area === "Cubierta" ? "b-teal" : "b-purple"}`}>{area}</span>;
 }
-
 function BadgeTipoRep({ tipo }) {
   if (!tipo) return null;
   return <span className={`badge ${tipo === "Correctiva" ? "b-red" : "b-green"}`}>{tipo}</span>;
 }
 
-function ItemModal({ item, onClose, onSave }) {
+// Componente de acciones del barco para cada ítem (botón cumplido + clip adjunto)
+function ItemAccionesBarco({ item, onUpdated, notify }) {
+  const [loading, setLoading] = useState(false);
+  const fileRef = useRef();
+
+  const handleCumplir = async (e) => {
+    e.stopPropagation();
+    if (item.estado === "cumplido") return;
+    if (!confirm("¿Marcar este ítem como Cumplido?")) return;
+    setLoading(true);
+    try {
+      await api.actualizarItem(item.id, { estado: "cumplido", fecha_realizacion: today() });
+      notify("Ítem marcado como cumplido", "success");
+      onUpdated();
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setLoading(false); }
+  };
+
+  const handleFileChange = async (e) => {
+    e.stopPropagation();
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const url = await api.subirAdjunto(item.id, file);
+      await api.actualizarItem(item.id, { adjunto_url: url });
+      notify("Archivo adjunto subido correctamente", "success");
+      onUpdated();
+    } catch (err) { alert("Error al subir archivo: " + err.message); }
+    finally { setLoading(false); fileRef.current.value = ""; }
+  };
+
+  return (
+    <div className="item-card-actions" onClick={e => e.stopPropagation()}>
+      {item.estado !== "cumplido" && (
+        <button className="cumplir-btn" onClick={handleCumplir} disabled={loading} title="Marcar como cumplido">
+          {loading ? "..." : "✓ Cumplido"}
+        </button>
+      )}
+      <button className={`clip-btn ${item.adjunto_url ? "has-file" : ""}`} onClick={() => fileRef.current.click()} disabled={loading} title={item.adjunto_url ? "Reemplazar adjunto" : "Subir adjunto"}>
+        📎
+      </button>
+      <input ref={fileRef} type="file" style={{ display: "none" }} onChange={handleFileChange} />
+    </div>
+  );
+}
+
+function ItemModal({ item, onClose, onSave, esBarco }) {
   const [form, setForm] = useState({ ...item });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -251,9 +312,7 @@ function ItemModal({ item, onClose, onSave }) {
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="mhdr">
-          <div>
-            <div className="mtitle">Ítem {item.numero_item}</div>
-          </div>
+          <div><div className="mtitle">Ítem {item.numero_item}</div></div>
           <button className="mclose" onClick={onClose}>✕</button>
         </div>
         <div className="mbody">
@@ -265,9 +324,13 @@ function ItemModal({ item, onClose, onSave }) {
           <div className="form-grid">
             <ToggleGroup label="Tipo de reparación" options={TIPOS_REPARACION} value={form.tipo_reparacion || ""} onChange={v => set("tipo_reparacion", v)} colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }} />
             <FG label="Estado *">
-              <select value={form.estado} onChange={e => set("estado", e.target.value)}>
-                {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              {esBarco ? (
+                <input value={ESTADOS[form.estado]?.label || form.estado} readOnly style={{ background: "var(--surface2)" }} />
+              ) : (
+                <select value={form.estado} onChange={e => set("estado", e.target.value)}>
+                  {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              )}
             </FG>
             <FG label="Tipo de realización">
               <select value={form.tipo_realizacion || ""} onChange={e => set("tipo_realizacion", e.target.value)}>
@@ -288,9 +351,17 @@ function ItemModal({ item, onClose, onSave }) {
           <FG label="Observaciones del Capitán/JDM" full>
             <textarea value={form.obs_capitan || ""} onChange={e => set("obs_capitan", e.target.value)} placeholder="Comentarios del embarcado..." />
           </FG>
-          <FG label="Observaciones del Superintendente" full>
-            <textarea value={form.obs_superintendente || ""} onChange={e => set("obs_superintendente", e.target.value)} placeholder="Comentarios del superintendente técnico..." />
-          </FG>
+          {!esBarco && (
+            <FG label="Observaciones del Superintendente" full>
+              <textarea value={form.obs_superintendente || ""} onChange={e => set("obs_superintendente", e.target.value)} placeholder="Comentarios del superintendente técnico..." />
+            </FG>
+          )}
+          {item.adjunto_url && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Adjunto</div>
+              <a href={item.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link">📎 Ver archivo adjunto →</a>
+            </div>
+          )}
         </div>
         <div className="mftr">
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
@@ -301,12 +372,19 @@ function ItemModal({ item, onClose, onSave }) {
   );
 }
 
-function SolicitudModal({ sol, onClose, onItemSaved }) {
+function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
   const [itemModal, setItemModal] = useState(null);
   const [items, setItems] = useState(sol.ssrr_items || []);
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
   const cumplidos = items.filter(it => it.estado === "cumplido").length;
+
+  const handleItemUpdated = async () => {
+    // Recargar ítems de esta solicitud
+    const { data } = await supabase.from("ssrr_items").select("*").eq("solicitud_id", sol.id);
+    if (data) setItems(data);
+    onItemSaved();
+  };
 
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -317,9 +395,7 @@ function SolicitudModal({ sol, onClose, onItemSaved }) {
               <div className="mtitle">SSRR N° {sol.numero}</div>
               {sol.area && <BadgeArea area={sol.area} />}
             </div>
-            <div style={{ fontSize: 11, color: "var(--muted)" }}>
-              {sol.barco} · Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por}
-            </div>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>{sol.barco} · Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por}</div>
           </div>
           <button className="mclose" onClick={onClose}>✕</button>
         </div>
@@ -350,20 +426,24 @@ function SolicitudModal({ sol, onClose, onItemSaved }) {
           <div className="form-section">Ítems de la solicitud</div>
 
           {items.map(it => (
-            <div key={it.id} className="item-card" onClick={() => setItemModal(it)}>
+            <div key={it.id} className="item-card" style={{ cursor: esBarco ? "default" : "pointer" }} onClick={!esBarco ? () => setItemModal(it) : undefined}>
               <div className="item-card-header">
                 <span className="item-card-num">{it.numero_item}</span>
                 <span className="item-card-desc">{it.descripcion}</span>
                 {it.tipo_reparacion && <BadgeTipoRep tipo={it.tipo_reparacion} />}
                 <BadgeEstado estado={it.estado} />
+                {esBarco && (
+                  <ItemAccionesBarco item={it} notify={notify} onUpdated={handleItemUpdated} />
+                )}
               </div>
-              {(it.obs_capitan || it.obs_superintendente || it.realizado_por || it.nro_remito) && (
+              {(it.obs_capitan || it.obs_superintendente || it.realizado_por || it.nro_remito || it.adjunto_url) && (
                 <div className="item-card-body">
                   {it.obs_capitan && <div className="item-card-field"><div className="item-card-label">Obs. Capitán/JDM</div><div className="item-card-value">{it.obs_capitan}</div></div>}
                   {it.obs_superintendente && <div className="item-card-field"><div className="item-card-label">Obs. Superintendente</div><div className="item-card-value">{it.obs_superintendente}</div></div>}
                   {it.realizado_por && <div className="item-card-field"><div className="item-card-label">Realizado por</div><div className="item-card-value">{it.realizado_por}{it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}</div></div>}
                   {it.fecha_realizacion && <div className="item-card-field"><div className="item-card-label">Fecha realización</div><div className="item-card-value">{fmtDate(it.fecha_realizacion)}</div></div>}
                   {it.nro_remito && <div className="item-card-field"><div className="item-card-label">N° Remito</div><div className="item-card-value" style={{ fontFamily: "var(--mono)", color: "var(--blue)" }}>{it.nro_remito}</div></div>}
+                  {it.adjunto_url && <div className="item-card-field"><div className="item-card-label">Adjunto</div><a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver archivo →</a></div>}
                 </div>
               )}
             </div>
@@ -375,14 +455,8 @@ function SolicitudModal({ sol, onClose, onItemSaved }) {
       </div>
 
       {itemModal && (
-        <ItemModal
-          item={itemModal}
-          onClose={() => setItemModal(null)}
-          onSave={() => {
-            setItemModal(null);
-            onItemSaved();
-          }}
-        />
+        <ItemModal item={itemModal} esBarco={esBarco} onClose={() => setItemModal(null)}
+          onSave={() => { setItemModal(null); handleItemUpdated(); }} notify={notify} />
       )}
     </div>
   );
@@ -411,12 +485,9 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
     try {
       const sol = await api.crearSolicitud({ ...form, status: "abierta" });
       const itemsCreados = itemsValidos.map((it, i) => ({
-        solicitud_id: sol.id,
-        numero_item: `${form.numero}-${i + 1}`,
-        descripcion: it.descripcion,
-        obs_capitan: it.obs_capitan || null,
-        tipo_reparacion: it.tipo_reparacion || null,
-        estado: "pendiente",
+        solicitud_id: sol.id, numero_item: `${form.numero}-${i + 1}`,
+        descripcion: it.descripcion, obs_capitan: it.obs_capitan || null,
+        tipo_reparacion: it.tipo_reparacion || null, estado: "pendiente",
       }));
       await api.crearItems(itemsCreados);
       await api.enviarNotificacion({
@@ -440,23 +511,13 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
         <div className="mbody">
           <div className="form-section">Datos de la solicitud</div>
           <div className="form-grid-3">
-            <FG label="Barco *">
-              <select value={form.barco} onChange={e => set("barco", e.target.value)}>
-                {BARCOS.map(b => <option key={b}>{b}</option>)}
-              </select>
-            </FG>
-            <FG label="N° de solicitud *" hint="Ej: 7/26">
-              <input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 7/26" />
-            </FG>
-            <FG label="Fecha de emisión *">
-              <input type="date" value={form.fecha_emision} onChange={e => set("fecha_emision", e.target.value)} />
-            </FG>
+            <FG label="Barco *"><select value={form.barco} onChange={e => set("barco", e.target.value)}>{BARCOS.map(b => <option key={b}>{b}</option>)}</select></FG>
+            <FG label="N° de solicitud *" hint="Ej: 7/26"><input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 7/26" /></FG>
+            <FG label="Fecha de emisión *"><input type="date" value={form.fecha_emision} onChange={e => set("fecha_emision", e.target.value)} /></FG>
           </div>
           <div className="form-grid mb12">
             <ToggleGroup label="Área *" options={AREAS} value={form.area} onChange={v => set("area", v)} colorClass={{ Cubierta: "cubierta", "Máquinas": "maquinas" }} />
-            <FG label="Emitido por (JDM / Capitán) *">
-              <input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" />
-            </FG>
+            <FG label="Emitido por (JDM / Capitán) *"><input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" /></FG>
           </div>
           <FG label="Observaciones generales" full>
             <textarea value={form.observaciones_generales} onChange={e => set("observaciones_generales", e.target.value)} placeholder="Observaciones generales..." style={{ marginTop: 8 }} />
@@ -470,13 +531,9 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 {items.length > 1 && <button className="btn btn-ghost btn-sm" onClick={() => removeItem(it.id)} style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>✕</button>}
               </div>
               <div className="form-grid">
-                <FG label="Descripción *" full>
-                  <input value={it.descripcion} onChange={e => updateItem(it.id, "descripcion", e.target.value)} placeholder="Descripción del trabajo a realizar..." />
-                </FG>
+                <FG label="Descripción *" full><input value={it.descripcion} onChange={e => updateItem(it.id, "descripcion", e.target.value)} placeholder="Descripción del trabajo a realizar..." /></FG>
                 <ToggleGroup label="Tipo de reparación" options={TIPOS_REPARACION} value={it.tipo_reparacion} onChange={v => updateItem(it.id, "tipo_reparacion", v)} colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }} />
-                <FG label="Observaciones del JDM/Capitán" full>
-                  <input value={it.obs_capitan || ""} onChange={e => updateItem(it.id, "obs_capitan", e.target.value)} placeholder="Observaciones opcionales..." />
-                </FG>
+                <FG label="Observaciones del JDM/Capitán" full><input value={it.obs_capitan || ""} onChange={e => updateItem(it.id, "obs_capitan", e.target.value)} placeholder="Observaciones opcionales..." /></FG>
               </div>
             </div>
           ))}
@@ -491,7 +548,7 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   );
 }
 
-function SolicitudCard({ sol, onVerDetalle, onItemClick }) {
+function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
   const items = sol.ssrr_items || [];
   const pendientes = items.filter(it => it.estado === "pendiente").length;
@@ -511,9 +568,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick }) {
         </div>
         <div className="flex-gap">
           <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
-          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>
-            {expanded ? "▲" : "▼"}
-          </button>
+          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>{expanded ? "▲" : "▼"}</button>
         </div>
       </div>
 
@@ -527,28 +582,34 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick }) {
                 <th style={{ width: 110 }}>Tipo Rep.</th>
                 <th style={{ width: 110 }}>Estado</th>
                 <th style={{ width: 130 }}>Obs. Capitán</th>
-                <th style={{ width: 150 }}>Obs. Superintendente</th>
+                {!esBarco && <th style={{ width: 150 }}>Obs. Super.</th>}
                 <th style={{ width: 120 }}>Quién realizó</th>
                 <th style={{ width: 90 }}>Fecha real.</th>
                 <th style={{ width: 90 }}>N° Remito</th>
+                <th style={{ width: 80 }}>Adjunto</th>
+                {esBarco && <th style={{ width: 130 }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {items.length === 0
-                ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 20, color: "var(--muted2)" }}>Sin ítems</td></tr>
+                ? <tr><td colSpan={esBarco ? 10 : 9} style={{ textAlign: "center", padding: 20, color: "var(--muted2)" }}>Sin ítems</td></tr>
                 : items.map(it => (
-                  <tr key={it.id} onClick={() => onItemClick(it)}>
+                  <tr key={it.id} onClick={!esBarco ? () => onItemClick(it) : undefined} style={{ cursor: esBarco ? "default" : "pointer" }}>
                     <td className="item-num-cell">{it.numero_item}</td>
                     <td className="item-desc-cell">{it.descripcion}</td>
                     <td><BadgeTipoRep tipo={it.tipo_reparacion} /></td>
                     <td><BadgeEstado estado={it.estado} /></td>
                     <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
-                    <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
-                    <td style={{ fontSize: 10, color: "var(--muted)" }}>
-                      {it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}
-                    </td>
+                    {!esBarco && <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>}
+                    <td style={{ fontSize: 10, color: "var(--muted)" }}>{it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td className="item-remito">{it.nro_remito || "—"}</td>
+                    <td>{it.adjunto_url ? <a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver</a> : "—"}</td>
+                    {esBarco && (
+                      <td onClick={e => e.stopPropagation()}>
+                        <ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} />
+                      </td>
+                    )}
                   </tr>
                 ))
               }
@@ -560,7 +621,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick }) {
   );
 }
 
-function PagePanel({ barco, notify }) {
+function PagePanel({ barco, notify, esBarco }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemModal, setItemModal] = useState(null);
@@ -591,9 +652,7 @@ function PagePanel({ barco, notify }) {
       if (filtroEstado) items = items.filter(it => it.estado === filtroEstado);
       if (busqueda) {
         const q = busqueda.toLowerCase();
-        if (!sol.numero?.toLowerCase().includes(q)) {
-          items = items.filter(it => it.descripcion?.toLowerCase().includes(q));
-        }
+        if (!sol.numero?.toLowerCase().includes(q)) items = items.filter(it => it.descripcion?.toLowerCase().includes(q));
       }
       return { ...sol, ssrr_items: items };
     })
@@ -608,7 +667,6 @@ function PagePanel({ barco, notify }) {
         <div className="stat"><div className="stat-label">Cumplidos</div><div className="stat-value" style={{ color: "var(--accent2)" }}>{counts.cumplido}</div></div>
         <div className="stat"><div className="stat-label">Anulados</div><div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div></div>
       </div>
-
       <div className="filter-row">
         <input className="filter-input" placeholder="🔍 Buscar ítem o N° SSRR..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         <select className="filter-select" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
@@ -622,38 +680,22 @@ function PagePanel({ barco, notify }) {
       {loading ? <div className="loading"><span className="spin">◌</span> Cargando...</div> :
         solFiltradas.length === 0 ? <div className="empty-state"><div style={{ fontSize: 28, marginBottom: 8 }}>🔧</div>Sin solicitudes registradas</div> :
         solFiltradas.map(sol => (
-          <SolicitudCard
-            key={sol.id}
-            sol={sol}
-            onVerDetalle={setSolicitudModal}
-            onItemClick={setItemModal}
-          />
+          <SolicitudCard key={sol.id} sol={sol} onVerDetalle={setSolicitudModal} onItemClick={setItemModal} esBarco={esBarco} notify={notify} onRefresh={load} />
         ))
       }
 
-      {itemModal && (
-        <ItemModal
-          item={itemModal}
-          onClose={() => setItemModal(null)}
-          onSave={() => { setItemModal(null); notify("Ítem actualizado", "success"); load(); }}
-        />
+      {itemModal && !esBarco && (
+        <ItemModal item={itemModal} esBarco={false} onClose={() => setItemModal(null)}
+          onSave={() => { setItemModal(null); notify("Ítem actualizado", "success"); load(); }} notify={notify} />
       )}
 
       {solicitudModal && (
-        <SolicitudModal
-          sol={solicitudModal}
-          onClose={() => setSolicitudModal(null)}
-          onItemSaved={() => { notify("Ítem actualizado", "success"); load(); setSolicitudModal(null); }}
-        />
+        <SolicitudModal sol={solicitudModal} esBarco={esBarco} notify={notify} onClose={() => setSolicitudModal(null)}
+          onItemSaved={() => { notify("Ítem actualizado", "success"); load(); setSolicitudModal(null); }} />
       )}
     </div>
   );
 }
-
-const BARCO_POR_EMAIL = {
-  "golondrinademar@paranalogistica.com.ar": "Golondrina de Mar",
-  "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
-};
 
 function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -663,8 +705,7 @@ function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return setError("Completá usuario y contraseña");
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setError("Usuario o contraseña incorrectos"); setLoading(false); }
   };
@@ -681,18 +722,10 @@ function LoginScreen() {
           <div style={{ fontSize: 11, color: "#6381A7", letterSpacing: 1 }}>Terra Mare Group</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div className="fg">
-            <label>Usuario</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey} placeholder="correo@paranalogistica.com.ar" autoFocus />
-          </div>
-          <div className="fg">
-            <label>Contraseña</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey} placeholder="••••••••" />
-          </div>
+          <div className="fg"><label>Usuario</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey} placeholder="correo@paranalogistica.com.ar" autoFocus /></div>
+          <div className="fg"><label>Contraseña</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey} placeholder="••••••••" /></div>
           {error && <div style={{ fontSize: 12, color: "#C0392B", background: "#FEE2E2", padding: "8px 12px", borderRadius: 6 }}>{error}</div>}
-          <button className="btn btn-primary" onClick={handleLogin} disabled={loading} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
-            {loading ? "Ingresando..." : "Ingresar"}
-          </button>
+          <button className="btn btn-primary" onClick={handleLogin} disabled={loading} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>{loading ? "Ingresando..." : "Ingresar"}</button>
         </div>
       </div>
     </div>
@@ -704,6 +737,7 @@ export default function App() {
   const [userEmail, setUserEmail] = useState("");
   const [barcosPermitidos, setBarcosPermitidos] = useState(BARCOS);
   const [barco, setBarco] = useState("Golondrina de Mar");
+  const [esBarco, setEsBarco] = useState(false);
   const [notif, setNotif] = useState(null);
   const [nuevaModal, setNuevaModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -714,8 +748,15 @@ export default function App() {
       const email = sess.user.email;
       setUserEmail(email);
       const barcoDelUsuario = BARCO_POR_EMAIL[email];
-      if (barcoDelUsuario) { setBarcosPermitidos([barcoDelUsuario]); setBarco(barcoDelUsuario); }
-      else { setBarcosPermitidos(BARCOS); setBarco(BARCOS[0]); }
+      if (barcoDelUsuario) {
+        setBarcosPermitidos([barcoDelUsuario]);
+        setBarco(barcoDelUsuario);
+        setEsBarco(true);
+      } else {
+        setBarcosPermitidos(BARCOS);
+        setBarco(BARCOS[0]);
+        setEsBarco(false);
+      }
     }
   };
 
@@ -725,7 +766,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); setUserEmail(""); };
+  const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); setUserEmail(""); setEsBarco(false); };
 
   const notify = useCallback((text, type = "info") => {
     setNotif({ text, type });
@@ -760,17 +801,12 @@ export default function App() {
           <div className="nav-section">Barcos</div>
           {barcosPermitidos.map(b => (
             <div key={b} className={`ni ${barco === b ? "active" : ""}`} onClick={() => barcosPermitidos.length > 1 && setBarco(b)}>
-              <span className="ni-icon">🚢</span>
-              <span style={{ fontSize: 11 }}>{b}</span>
+              <span className="ni-icon">🚢</span><span style={{ fontSize: 11 }}>{b}</span>
             </div>
           ))}
           <div className="nav-section">Acciones</div>
-          <div className="ni nueva" onClick={() => setNuevaModal(true)}>
-            <span className="ni-icon">+</span><span>Nueva SSRR</span>
-          </div>
-          <div className="ni active">
-            <span className="ni-icon">▦</span><span>Panel de control</span>
-          </div>
+          <div className="ni nueva" onClick={() => setNuevaModal(true)}><span className="ni-icon">+</span><span>Nueva SSRR</span></div>
+          <div className="ni active"><span className="ni-icon">▦</span><span>Panel de control</span></div>
           <div style={{ flex: 1 }} />
           <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,.1)" }}>
             <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none" }} onClick={() => window.open(ERP_URL, "_self")}>
@@ -779,7 +815,7 @@ export default function App() {
             <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }} onClick={handleLogout}>
               <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span><span style={{ fontSize: 11 }}>Cerrar sesión</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.4</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.5</div>
           </div>
         </nav>
 
@@ -794,18 +830,14 @@ export default function App() {
             </div>
           </div>
           <div className="content">
-            <PagePanel key={`${barco}-${refreshKey}`} barco={barco} notify={notify} />
+            <PagePanel key={`${barco}-${refreshKey}`} barco={barco} notify={notify} esBarco={esBarco} />
           </div>
         </div>
       </div>
 
       {nuevaModal && (
-        <NuevaSolicitudModal
-          barcoDefault={barco}
-          onClose={() => setNuevaModal(false)}
-          onSave={() => { setNuevaModal(false); setRefreshKey(k => k + 1); }}
-          notify={notify}
-        />
+        <NuevaSolicitudModal barcoDefault={barco} onClose={() => setNuevaModal(false)}
+          onSave={() => { setNuevaModal(false); setRefreshKey(k => k + 1); }} notify={notify} />
       )}
 
       <Notif msg={notif} onClose={() => setNotif(null)} />
