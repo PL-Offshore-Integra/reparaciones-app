@@ -190,6 +190,16 @@ const api = {
     const { error } = await supabase.from("ssrr_items").update({ ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) throw error;
   },
+  async eliminarItem(id) {
+    const { error } = await supabase.from("ssrr_items").delete().eq("id", id);
+    if (error) throw error;
+  },
+  async eliminarSolicitud(id) {
+    const { error: e1 } = await supabase.from("ssrr_items").delete().eq("solicitud_id", id);
+    if (e1) throw e1;
+    const { error: e2 } = await supabase.from("ssrr_solicitudes").delete().eq("id", id);
+    if (e2) throw e2;
+  },
   async subirAdjunto(itemId, file) {
     const ext = file.name.split(".").pop();
     const path = `${itemId}_${Date.now()}.${ext}`;
@@ -323,7 +333,7 @@ function ModalCumplir({ item, onClose, onSave, notify }) {
   );
 }
 
-function ItemAccionesBarco({ item, onUpdated, notify }) {
+function ItemAccionesBarco({ item, onUpdated, onEliminar, notify }) {
   const [modalCumplir, setModalCumplir] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileRef = useRef();
@@ -342,6 +352,18 @@ function ItemAccionesBarco({ item, onUpdated, notify }) {
     finally { setLoading(false); fileRef.current.value = ""; }
   };
 
+  const handleEliminar = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar el ítem ${item.numero_item}?\n\n"${item.descripcion}"\n\nEsta acción no se puede deshacer.`)) return;
+    setLoading(true);
+    try {
+      await api.eliminarItem(item.id);
+      notify("Ítem eliminado", "warn");
+      onEliminar();
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setLoading(false); }
+  };
+
   return (
     <div className="item-card-actions" onClick={e => e.stopPropagation()}>
       {item.estado !== "cumplido" && (
@@ -352,14 +374,13 @@ function ItemAccionesBarco({ item, onUpdated, notify }) {
       <button className={`clip-btn ${item.adjunto_url ? "has-file" : ""}`} onClick={() => fileRef.current.click()} disabled={loading} title={item.adjunto_url ? "Reemplazar adjunto" : "Subir adjunto"}>
         📎
       </button>
+      <button className="clip-btn" onClick={handleEliminar} disabled={loading} title="Eliminar ítem" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>
+        🗑
+      </button>
       <input ref={fileRef} type="file" style={{ display: "none" }} onChange={handleFileChange} />
       {modalCumplir && (
-        <ModalCumplir
-          item={item}
-          notify={notify}
-          onClose={() => setModalCumplir(false)}
-          onSave={() => { setModalCumplir(false); onUpdated(); }}
-        />
+        <ModalCumplir item={item} notify={notify} onClose={() => setModalCumplir(false)}
+          onSave={() => { setModalCumplir(false); onUpdated(); }} />
       )}
     </div>
   );
@@ -502,7 +523,7 @@ function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
                 {it.tipo_reparacion && <BadgeTipoRep tipo={it.tipo_reparacion} />}
                 <BadgeEstado estado={it.estado} />
                 {esBarco && (
-                  <ItemAccionesBarco item={it} notify={notify} onUpdated={handleItemUpdated} />
+                  <ItemAccionesBarco item={it} notify={notify} onUpdated={handleItemUpdated} onEliminar={handleItemUpdated} />
                 )}
               </div>
               {(it.obs_capitan || it.obs_superintendente || it.realizado_por || it.nro_remito || it.adjunto_url) && (
@@ -619,9 +640,22 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
 
 function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
+  const [loadingDel, setLoadingDel] = useState(false);
   const items = sol.ssrr_items || [];
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
+
+  const handleEliminarSol = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar la SSRR N° ${sol.numero} completa?\n\nSe eliminarán todos sus ítems. Esta acción no se puede deshacer.`)) return;
+    setLoadingDel(true);
+    try {
+      await api.eliminarSolicitud(sol.id);
+      notify("Solicitud eliminada", "warn");
+      onRefresh();
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setLoadingDel(false); }
+  };
 
   return (
     <div className="ssrr-card">
@@ -637,6 +671,11 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
         </div>
         <div className="flex-gap">
           <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+          {esBarco && (
+            <button className="ssrr-expand" onClick={handleEliminarSol} disabled={loadingDel} title="Eliminar solicitud completa" style={{ color: "var(--danger)" }}>
+              🗑
+            </button>
+          )}
           <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>{expanded ? "▲" : "▼"}</button>
         </div>
       </div>
@@ -676,7 +715,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
                     <td>{it.adjunto_url ? <a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver</a> : "—"}</td>
                     {esBarco && (
                       <td onClick={e => e.stopPropagation()}>
-                        <ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} />
+                        <ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} onEliminar={onRefresh} />
                       </td>
                     )}
                   </tr>
