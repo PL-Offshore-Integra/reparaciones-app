@@ -63,6 +63,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .overlay{position:fixed;inset:0;background:rgba(33,51,99,.5);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:20px;overflow-y:auto;animation:fadeIn .15s}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:800px;margin:auto;animation:slideUp .2s;box-shadow:0 8px 32px rgba(33,51,99,.18)}
 .modal-xl{max-width:1000px}
+.modal-xxl{max-width:1100px}
 .mhdr{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:12px 12px 0 0}
 .mtitle{font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--navy)}
 .mbody{padding:22px}
@@ -95,9 +96,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;cursor:pointer}
 .filter-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;min-width:200px}
 .ssrr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(33,51,99,.05)}
-.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.ssrr-hdr:hover{background:#EEF2F7}
-.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)}
+.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;}
+.ssrr-hdr-main{flex:1;cursor:pointer;min-width:0}
+.ssrr-hdr-main:hover .ssrr-num{color:var(--blue);text-decoration:underline}
+.ssrr-expand{padding:4px 8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;flex-shrink:0;border-radius:4px}
+.ssrr-expand:hover{background:var(--border);color:var(--navy)}
+.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy);transition:color .15s}
 .ssrr-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .items-table{width:100%;border-collapse:collapse}
 .items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
@@ -120,18 +124,34 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .flex-between{display:flex;justify-content:space-between;align-items:center}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
 .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.detail-field{display:flex;flex-direction:column;gap:3px}
+.detail-label{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.detail-value{font-size:13px;color:var(--text);font-weight:500}
+.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.item-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(33,51,99,.1)}
+.item-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.item-card-num{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600}
+.item-card-desc{font-size:13px;color:var(--text);font-weight:500;flex:1}
+.item-card-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.item-card-field{display:flex;flex-direction:column;gap:2px}
+.item-card-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase}
+.item-card-value{font-size:11px;color:var(--text)}
 `;
 
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
 const today = () => new Date().toISOString().split("T")[0];
 
-// Ordenar solicitudes por número (ej: 7/26 > 6/26)
 const ordenarSolicitudes = (sols) => {
   return [...sols].sort((a, b) => {
-    const [numA, anioA] = (a.numero || "0/0").split("/").map(Number);
-    const [numB, anioB] = (b.numero || "0/0").split("/").map(Number);
-    if (anioA !== anioB) return anioB - anioA;
-    return numB - numA;
+    const parseNum = (n) => {
+      const parts = (n || "0/0").split("/");
+      return { num: parseInt(parts[0]) || 0, anio: parseInt(parts[1]) || 0 };
+    };
+    const pa = parseNum(a.numero);
+    const pb = parseNum(b.numero);
+    if (pa.anio !== pb.anio) return pb.anio - pa.anio;
+    return pb.num - pa.num;
   });
 };
 
@@ -167,9 +187,7 @@ const api = {
         },
         body: JSON.stringify(payload),
       });
-    } catch (e) {
-      console.error("Error enviando notificación:", e);
-    }
+    } catch (e) { console.error("Error enviando notificación:", e); }
   },
 };
 
@@ -193,12 +211,7 @@ function ToggleGroup({ label, options, value, onChange, colorClass }) {
       {label && <label>{label}</label>}
       <div className="toggle-group">
         {options.map(opt => (
-          <button
-            key={opt}
-            className={`toggle-btn ${value === opt ? `selected ${colorClass?.[opt] || ""}` : ""}`}
-            onClick={() => onChange(opt)}
-            type="button"
-          >
+          <button key={opt} className={`toggle-btn ${value === opt ? `selected ${colorClass?.[opt] || ""}` : ""}`} onClick={() => onChange(opt)} type="button">
             {opt}
           </button>
         ))}
@@ -214,14 +227,12 @@ function BadgeEstado({ estado }) {
 
 function BadgeArea({ area }) {
   if (!area) return null;
-  const color = area === "Cubierta" ? "b-teal" : "b-purple";
-  return <span className={`badge ${color}`}>{area}</span>;
+  return <span className={`badge ${area === "Cubierta" ? "b-teal" : "b-purple"}`}>{area}</span>;
 }
 
 function BadgeTipoRep({ tipo }) {
   if (!tipo) return null;
-  const color = tipo === "Correctiva" ? "b-red" : "b-green";
-  return <span className={`badge ${color}`}>{tipo}</span>;
+  return <span className={`badge ${tipo === "Correctiva" ? "b-red" : "b-green"}`}>{tipo}</span>;
 }
 
 function ItemModal({ item, onClose, onSave }) {
@@ -242,19 +253,17 @@ function ItemModal({ item, onClose, onSave }) {
         <div className="mhdr">
           <div>
             <div className="mtitle">Ítem {item.numero_item}</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{item.descripcion}</div>
           </div>
           <button className="mclose" onClick={onClose}>✕</button>
         </div>
         <div className="mbody">
+          <div className="form-grid" style={{ marginBottom: 14 }}>
+            <FG label="Descripción" full>
+              <input value={form.descripcion || ""} readOnly style={{ background: "var(--surface2)", color: "var(--text)", fontWeight: 500 }} />
+            </FG>
+          </div>
           <div className="form-grid">
-            <ToggleGroup
-              label="Tipo de reparación"
-              options={TIPOS_REPARACION}
-              value={form.tipo_reparacion || ""}
-              onChange={v => set("tipo_reparacion", v)}
-              colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }}
-            />
+            <ToggleGroup label="Tipo de reparación" options={TIPOS_REPARACION} value={form.tipo_reparacion || ""} onChange={v => set("tipo_reparacion", v)} colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }} />
             <FG label="Estado *">
               <select value={form.estado} onChange={e => set("estado", e.target.value)}>
                 {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -292,11 +301,97 @@ function ItemModal({ item, onClose, onSave }) {
   );
 }
 
+function SolicitudModal({ sol, onClose, onItemSaved }) {
+  const [itemModal, setItemModal] = useState(null);
+  const [items, setItems] = useState(sol.ssrr_items || []);
+  const pendientes = items.filter(it => it.estado === "pendiente").length;
+  const enProceso = items.filter(it => it.estado === "en_proceso").length;
+  const cumplidos = items.filter(it => it.estado === "cumplido").length;
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-xxl">
+        <div className="mhdr">
+          <div>
+            <div className="flex-gap" style={{ marginBottom: 4 }}>
+              <div className="mtitle">SSRR N° {sol.numero}</div>
+              {sol.area && <BadgeArea area={sol.area} />}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>
+              {sol.barco} · Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por}
+            </div>
+          </div>
+          <button className="mclose" onClick={onClose}>✕</button>
+        </div>
+        <div className="mbody">
+          <div className="detail-grid">
+            <div className="detail-field"><div className="detail-label">Barco</div><div className="detail-value">{sol.barco}</div></div>
+            <div className="detail-field"><div className="detail-label">Área</div><div className="detail-value">{sol.area ? <BadgeArea area={sol.area} /> : "—"}</div></div>
+            <div className="detail-field"><div className="detail-label">N° Solicitud</div><div className="detail-value" style={{ fontFamily: "var(--mono)", fontWeight: 700 }}>{sol.numero}</div></div>
+            <div className="detail-field"><div className="detail-label">Fecha emisión</div><div className="detail-value">{fmtDate(sol.fecha_emision)}</div></div>
+            <div className="detail-field"><div className="detail-label">Emitido por</div><div className="detail-value">{sol.emitido_por}</div></div>
+            <div className="detail-field">
+              <div className="detail-label">Resumen</div>
+              <div className="flex-gap" style={{ flexWrap: "wrap", marginTop: 2 }}>
+                {pendientes > 0 && <span className="badge b-amber">{pendientes} pend.</span>}
+                {enProceso > 0 && <span className="badge b-blue">{enProceso} en proc.</span>}
+                {cumplidos > 0 && <span className="badge b-green">{cumplidos} cumpl.</span>}
+              </div>
+            </div>
+          </div>
+
+          {sol.observaciones_generales && (
+            <div className="info-box accent mb12">
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: "var(--blue)", textTransform: "uppercase", marginBottom: 4 }}>Observaciones generales</div>
+              <div style={{ fontSize: 12, color: "var(--text)" }}>{sol.observaciones_generales}</div>
+            </div>
+          )}
+
+          <div className="form-section">Ítems de la solicitud</div>
+
+          {items.map(it => (
+            <div key={it.id} className="item-card" onClick={() => setItemModal(it)}>
+              <div className="item-card-header">
+                <span className="item-card-num">{it.numero_item}</span>
+                <span className="item-card-desc">{it.descripcion}</span>
+                {it.tipo_reparacion && <BadgeTipoRep tipo={it.tipo_reparacion} />}
+                <BadgeEstado estado={it.estado} />
+              </div>
+              {(it.obs_capitan || it.obs_superintendente || it.realizado_por || it.nro_remito) && (
+                <div className="item-card-body">
+                  {it.obs_capitan && <div className="item-card-field"><div className="item-card-label">Obs. Capitán/JDM</div><div className="item-card-value">{it.obs_capitan}</div></div>}
+                  {it.obs_superintendente && <div className="item-card-field"><div className="item-card-label">Obs. Superintendente</div><div className="item-card-value">{it.obs_superintendente}</div></div>}
+                  {it.realizado_por && <div className="item-card-field"><div className="item-card-label">Realizado por</div><div className="item-card-value">{it.realizado_por}{it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}</div></div>}
+                  {it.fecha_realizacion && <div className="item-card-field"><div className="item-card-label">Fecha realización</div><div className="item-card-value">{fmtDate(it.fecha_realizacion)}</div></div>}
+                  {it.nro_remito && <div className="item-card-field"><div className="item-card-label">N° Remito</div><div className="item-card-value" style={{ fontFamily: "var(--mono)", color: "var(--blue)" }}>{it.nro_remito}</div></div>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mftr">
+          <button className="btn btn-ghost" onClick={onClose}>Cerrar</button>
+        </div>
+      </div>
+
+      {itemModal && (
+        <ItemModal
+          item={itemModal}
+          onClose={() => setItemModal(null)}
+          onSave={() => {
+            setItemModal(null);
+            onItemSaved();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   const [form, setForm] = useState({
     barco: barcoDefault || "Golondrina de Mar",
-    area: "",
-    numero: "", fecha_emision: today(), emitido_por: "", observaciones_generales: "",
+    area: "", numero: "", fecha_emision: today(), emitido_por: "", observaciones_generales: "",
   });
   const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "", tipo_reparacion: "" }]);
   const [saving, setSaving] = useState(false);
@@ -325,13 +420,9 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
       }));
       await api.crearItems(itemsCreados);
       await api.enviarNotificacion({
-        barco: form.barco,
-        area: form.area,
-        numero: form.numero,
-        fecha: fmtDate(form.fecha_emision),
-        emitido_por: form.emitido_por,
-        observaciones: form.observaciones_generales || "",
-        items: itemsCreados,
+        barco: form.barco, area: form.area, numero: form.numero,
+        fecha: fmtDate(form.fecha_emision), emitido_por: form.emitido_por,
+        observaciones: form.observaciones_generales || "", items: itemsCreados,
       });
       notify("SSRR creada correctamente", "success");
       onSave();
@@ -362,13 +453,7 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
             </FG>
           </div>
           <div className="form-grid mb12">
-            <ToggleGroup
-              label="Área *"
-              options={AREAS}
-              value={form.area}
-              onChange={v => set("area", v)}
-              colorClass={{ Cubierta: "cubierta", "Máquinas": "maquinas" }}
-            />
+            <ToggleGroup label="Área *" options={AREAS} value={form.area} onChange={v => set("area", v)} colorClass={{ Cubierta: "cubierta", "Máquinas": "maquinas" }} />
             <FG label="Emitido por (JDM / Capitán) *">
               <input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" />
             </FG>
@@ -376,12 +461,8 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
           <FG label="Observaciones generales" full>
             <textarea value={form.observaciones_generales} onChange={e => set("observaciones_generales", e.target.value)} placeholder="Observaciones generales..." style={{ marginTop: 8 }} />
           </FG>
-
           <div className="form-section">Ítems a reparar</div>
-          <div className="info-box accent mb12">
-            Agregá cada punto de reparación. El número de ítem se asigna automáticamente.
-          </div>
-
+          <div className="info-box accent mb12">Agregá cada punto de reparación. El número de ítem se asigna automáticamente.</div>
           {items.map((it, i) => (
             <div key={it.id} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "12px 14px", marginBottom: 8 }}>
               <div className="flex-between mb8">
@@ -392,13 +473,7 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 <FG label="Descripción *" full>
                   <input value={it.descripcion} onChange={e => updateItem(it.id, "descripcion", e.target.value)} placeholder="Descripción del trabajo a realizar..." />
                 </FG>
-                <ToggleGroup
-                  label="Tipo de reparación"
-                  options={TIPOS_REPARACION}
-                  value={it.tipo_reparacion}
-                  onChange={v => updateItem(it.id, "tipo_reparacion", v)}
-                  colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }}
-                />
+                <ToggleGroup label="Tipo de reparación" options={TIPOS_REPARACION} value={it.tipo_reparacion} onChange={v => updateItem(it.id, "tipo_reparacion", v)} colorClass={{ Correctiva: "correctiva", Preventiva: "preventiva" }} />
                 <FG label="Observaciones del JDM/Capitán" full>
                   <input value={it.obs_capitan || ""} onChange={e => updateItem(it.id, "obs_capitan", e.target.value)} placeholder="Observaciones opcionales..." />
                 </FG>
@@ -416,16 +491,16 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   );
 }
 
-function SolicitudCard({ sol, onItemClick }) {
-  const [expanded, setExpanded] = useState(true);
+function SolicitudCard({ sol, onVerDetalle, onItemClick }) {
+  const [expanded, setExpanded] = useState(false);
   const items = sol.ssrr_items || [];
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
 
   return (
     <div className="ssrr-card">
-      <div className="ssrr-hdr" onClick={() => setExpanded(!expanded)}>
-        <div>
+      <div className="ssrr-hdr">
+        <div className="ssrr-hdr-main" onClick={() => onVerDetalle(sol)}>
           <div className="flex-gap">
             <span className="ssrr-num">SSRR N° {sol.numero}</span>
             {sol.area && <BadgeArea area={sol.area} />}
@@ -436,7 +511,9 @@ function SolicitudCard({ sol, onItemClick }) {
         </div>
         <div className="flex-gap">
           <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
-          <span style={{ fontSize: 14, color: "var(--muted)" }}>{expanded ? "▲" : "▼"}</span>
+          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>
+            {expanded ? "▲" : "▼"}
+          </button>
         </div>
       </div>
 
@@ -487,6 +564,7 @@ function PagePanel({ barco, notify }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemModal, setItemModal] = useState(null);
+  const [solicitudModal, setSolicitudModal] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("");
   const [busqueda, setBusqueda] = useState("");
 
@@ -544,7 +622,12 @@ function PagePanel({ barco, notify }) {
       {loading ? <div className="loading"><span className="spin">◌</span> Cargando...</div> :
         solFiltradas.length === 0 ? <div className="empty-state"><div style={{ fontSize: 28, marginBottom: 8 }}>🔧</div>Sin solicitudes registradas</div> :
         solFiltradas.map(sol => (
-          <SolicitudCard key={sol.id} sol={sol} onItemClick={setItemModal} />
+          <SolicitudCard
+            key={sol.id}
+            sol={sol}
+            onVerDetalle={setSolicitudModal}
+            onItemClick={setItemModal}
+          />
         ))
       }
 
@@ -553,6 +636,14 @@ function PagePanel({ barco, notify }) {
           item={itemModal}
           onClose={() => setItemModal(null)}
           onSave={() => { setItemModal(null); notify("Ítem actualizado", "success"); load(); }}
+        />
+      )}
+
+      {solicitudModal && (
+        <SolicitudModal
+          sol={solicitudModal}
+          onClose={() => setSolicitudModal(null)}
+          onItemSaved={() => { notify("Ítem actualizado", "success"); load(); setSolicitudModal(null); }}
         />
       )}
     </div>
@@ -575,19 +666,13 @@ function LoginScreen() {
     setLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError("Usuario o contraseña incorrectos");
-      setLoading(false);
-    }
+    if (error) { setError("Usuario o contraseña incorrectos"); setLoading(false); }
   };
 
   const handleKey = (e) => { if (e.key === "Enter") handleLogin(); };
 
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg, #213363 0%, #1a2a5e 50%, #0f1d4a 100%)",
-    }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #213363 0%, #1a2a5e 50%, #0f1d4a 100%)" }}>
       <style>{CSS}</style>
       <div style={{ background: "#fff", borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 380, boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -629,13 +714,8 @@ export default function App() {
       const email = sess.user.email;
       setUserEmail(email);
       const barcoDelUsuario = BARCO_POR_EMAIL[email];
-      if (barcoDelUsuario) {
-        setBarcosPermitidos([barcoDelUsuario]);
-        setBarco(barcoDelUsuario);
-      } else {
-        setBarcosPermitidos(BARCOS);
-        setBarco(BARCOS[0]);
-      }
+      if (barcoDelUsuario) { setBarcosPermitidos([barcoDelUsuario]); setBarco(barcoDelUsuario); }
+      else { setBarcosPermitidos(BARCOS); setBarco(BARCOS[0]); }
     }
   };
 
@@ -645,11 +725,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUserEmail("");
-  };
+  const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); setUserEmail(""); };
 
   const notify = useCallback((text, type = "info") => {
     setNotif({ text, type });
@@ -681,7 +757,6 @@ export default function App() {
               </div>
             </div>
           </div>
-
           <div className="nav-section">Barcos</div>
           {barcosPermitidos.map(b => (
             <div key={b} className={`ni ${barco === b ? "active" : ""}`} onClick={() => barcosPermitidos.length > 1 && setBarco(b)}>
@@ -689,29 +764,22 @@ export default function App() {
               <span style={{ fontSize: 11 }}>{b}</span>
             </div>
           ))}
-
           <div className="nav-section">Acciones</div>
           <div className="ni nueva" onClick={() => setNuevaModal(true)}>
-            <span className="ni-icon">+</span>
-            <span>Nueva SSRR</span>
+            <span className="ni-icon">+</span><span>Nueva SSRR</span>
           </div>
           <div className="ni active">
-            <span className="ni-icon">▦</span>
-            <span>Panel de control</span>
+            <span className="ni-icon">▦</span><span>Panel de control</span>
           </div>
-
           <div style={{ flex: 1 }} />
-
           <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,.1)" }}>
             <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none" }} onClick={() => window.open(ERP_URL, "_self")}>
-              <span className="ni-icon" style={{ fontSize: 11 }}>←</span>
-              <span style={{ fontSize: 11 }}>Volver al ERP</span>
+              <span className="ni-icon" style={{ fontSize: 11 }}>←</span><span style={{ fontSize: 11 }}>Volver al ERP</span>
             </div>
             <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }} onClick={handleLogout}>
-              <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span>
-              <span style={{ fontSize: 11 }}>Cerrar sesión</span>
+              <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span><span style={{ fontSize: 11 }}>Cerrar sesión</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.3</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.4</div>
           </div>
         </nav>
 
