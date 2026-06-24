@@ -44,6 +44,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .sidebar-logo-wrap{padding:20px 18px 16px;display:flex;align-items:center;gap:12px}
 /* [DS-3.2] logo circular 36×36px con border 2px white 20% */
 .sidebar-logo{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+.sidebar-logo-img{width:36px;height:36px;object-fit:cover;border-radius:50%;border:2px solid rgba(255,255,255,.2)}
 .sidebar-logo-main{font-size:13px;font-weight:700;color:#fff;letter-spacing:2px;text-transform:uppercase}
 .sidebar-logo-sub{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.5px}
 .nav-section{padding:12px 18px 4px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase}
@@ -1063,8 +1064,8 @@ function LoginScreen() {
             </div>
             <div className="login-left-divider" />
             <div className="login-left-company">
-              <img src="/PL.png" alt="Parana Logística" className="login-left-company-logo" />
-              <div className="login-left-company-name">Parana Logística | Reparaciones</div>
+              <img src="/PL.png" alt="PL Offshore" className="login-left-company-logo" />
+              <div className="login-left-company-name">PL Offshore | Reparaciones</div>
             </div>
             <div className="login-left-line" />
             <div className="login-left-sub">We Find the Way, or We Make One.</div>
@@ -1073,7 +1074,7 @@ function LoginScreen() {
           {/* ── Derecha: formulario ── */}
           <div className="login-right">
             <div className="login-card">
-              <div className="login-card-eyebrow">Parana Logística | Reparaciones</div>
+              <div className="login-card-eyebrow">PL Offshore | Reparaciones</div>
               <div className="login-card-title">Acceso al portal</div>
               <div className="login-card-sub">Solo personal autorizado</div>
               {error && <div className="login-error">{error}</div>}
@@ -1088,7 +1089,7 @@ function LoginScreen() {
               <button className="login-btn" onClick={handleLogin} disabled={loading || !email || !password}>
                 {loading ? "Ingresando..." : "Ingresar →"}
               </button>
-              <div className="login-footer">Parana Logística · Reparaciones · Confidencial</div>
+              <div className="login-footer">PL Offshore · Reparaciones · Confidencial</div>
             </div>
           </div>
 
@@ -1162,11 +1163,10 @@ export default function App() {
         <nav className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo-wrap">
-              {/* [DS-3.2] logo circular */}
-              <div className="sidebar-logo">🔧</div>
+              <img src="/PL.png" alt="PL Offshore" className="sidebar-logo-img" onError={e => { e.currentTarget.style.display = "none"; }} />
               <div>
                 <div className="sidebar-logo-main">Reparaciones</div>
-                <div className="sidebar-logo-sub">Terra Mare Group</div>
+                <div className="sidebar-logo-sub">PL Offshore</div>
               </div>
             </div>
           </div>
