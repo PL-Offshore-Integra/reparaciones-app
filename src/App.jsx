@@ -21,298 +21,362 @@ const BARCO_POR_EMAIL = {
   "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
 };
 
-// ─── CSS ─────────────────────────────────────────────────────────────────────
+//  CSS 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#213363;--blue:#235C96;--mid:#6381A7;--light:#A5B5CC;
-  --bg:#F0F4F8;--surface:#FFF;--surface2:#F5F7FA;--border:#D6E0ED;
-  --text:#213363;--muted:#6381A7;--muted2:#8FA3BC;--accent:#235C96;
-  --accent2:#1E7A4A;
-  --warn:#B07D0A;--danger:#C0392B;--purple:#6B4FA0;
-  --sans:'Montserrat',sans-serif;--mono:'DM Mono',monospace;--r:6px;--r2:10px;
-}
 
-/* [DS-10.5][DS-11.7] Overflow guards obligatorios */
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+/*  TOKENS · INTEGRA Brand Book v1.0 
+   Los nombres de variable son los que ya usaba esta app: cambian los valores,
+   no los selectores. Navy = estructura, nunca acción. Un solo color de acción.
+    */
+:root{
+  --navy:#082F4E;--blue:#056D76;--mid:#4A5560;--light:#C9D0D6;
+  --bg:#FAFBFC;--surface:#FFFFFF;--surface2:#F4F6F8;--surface3:#E4E8EC;
+  --border:#E4E8EC;--border2:#C9D0D6;
+  --text:#0F1419;--muted:#4A5560;--muted2:#7A8792;
+  --accent:#056D76;--accent2:#0E7A5F;--warn:#8F5A0B;--danger:#B3261E;
+  --purple:#4A5560;--teal:#056D76;--orange:#8F5A0B;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--r:4px;--r2:4px;
+  --nav:#082F4E;--action:#056D76;--action-press:#04565D;
+  --tr:color 120ms cubic-bezier(.2,0,.38,.9),background-color 120ms cubic-bezier(.2,0,.38,.9),border-color 120ms cubic-bezier(.2,0,.38,.9);
+}
+/* Instancia: se activa con <html data-instance="pl-offshore"> en index.html */
+[data-instance="pl-offshore"]{--nav:#002247;--action:#002247;--blue:#002247;--accent:#002247}
+[data-instance="clean-sea"]{--nav:#1B3765;--action:#006945;--blue:#006945;--accent:#006945}
+[data-instance="terramare"]{--nav:#213363;--action:#1F5285;--blue:#1F5285;--accent:#1F5285}
+
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+*:focus-visible{outline:2px solid var(--action);outline-offset:2px}
 .app{display:flex;min-height:100vh;overflow-x:hidden}
 
-/* ── SIDEBAR [DS-3.2] ── */
-.sidebar{width:235px;min-width:235px;background:var(--navy);display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(33,51,99,.15)}
-.sidebar-header{border-bottom:1px solid rgba(255,255,255,.1)}
-.sidebar-logo-wrap{padding:20px 18px 16px;display:flex;align-items:center;gap:12px}
-/* [DS-3.2] logo circular 36×36px con border 2px white 20% */
-.sidebar-logo{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:50%;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
-.sidebar-logo-img{width:36px;height:36px;object-fit:cover;border-radius:50%;border:2px solid rgba(255,255,255,.2)}
-.sidebar-logo-main{font-size:13px;font-weight:700;color:#fff;letter-spacing:2px;text-transform:uppercase}
-.sidebar-logo-sub{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.5px}
-.nav-section{padding:12px 18px 4px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);text-transform:uppercase}
-.ni{display:flex;align-items:center;gap:9px;padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.6);border-left:3px solid transparent;transition:all .12s;user-select:none}
-.ni:hover{color:#fff;background:rgba(255,255,255,.06)}
-.ni.active{color:#fff;border-left-color:var(--light);background:rgba(255,255,255,.1);font-weight:600}
-.ni.nueva{background:rgba(35,92,150,.4);color:#fff;border-left-color:#7EB8E8}
-.ni.nueva:hover{background:rgba(35,92,150,.6)}
-.ni.erp{color:rgba(255,255,255,.4)}.ni.erp:hover{color:rgba(255,255,255,.7)}
-.ni-icon{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+/*  NAVEGACIÓN LATERAL · 240px, colapsa a iconos en mobile  */
+.sidebar{width:240px;min-width:240px;background:var(--nav);display:flex;flex-direction:column}
+.sidebar-header{border-bottom:1px solid rgba(255,255,255,.14)}
+.sidebar-logo-wrap{padding:14px 16px;display:flex;align-items:center;gap:12px;height:56px}
+.sidebar-logo-img{width:28px;height:28px;object-fit:contain;border-radius:var(--r);border:0;background:rgba(255,255,255,.14)}
+.sidebar-logo-main{font-size:14px;font-weight:600;color:#fff;letter-spacing:0;text-transform:none}
+.sidebar-logo-sub{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.72);margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
+.nav-section{padding:16px 16px 6px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:rgba(255,255,255,.72);text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:14px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.72);border-left:3px solid transparent;transition:var(--tr);user-select:none;min-height:36px}
+.ni:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ni.active{color:#fff;border-left-color:var(--action);background:rgba(255,255,255,.12);font-weight:500}
+.ni.sub{padding-left:34px;font-size:13px;font-weight:400}
+.ni.sub.active{font-weight:500}
+.ni.back{color:rgba(255,255,255,.72);font-size:13px;border-top:1px solid rgba(255,255,255,.14);margin-top:6px}
+.ni.back:hover{color:#fff}
+.ni-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.ni-badge{margin-left:auto;background:rgba(255,255,255,.14);color:#fff;font-family:var(--mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:3px;min-width:20px;text-align:center}
+.ni-badge.amber{background:rgba(255,255,255,.14)}
+.ni-badge.gray{background:rgba(255,255,255,.14);color:rgba(255,255,255,.72)}
 
-/* ── MAIN [DS-3.3][DS-3.4] ── */
+/*  BARRA SUPERIOR · 56px  */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(33,51,99,.06)}
-.topbar-title{font-size:12px;font-weight:600;letter-spacing:1px;color:var(--navy);text-transform:uppercase}
-/* [DS-10.5] overflow-x:hidden en .content */
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px 28px;background:var(--bg)}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px;background:var(--bg)}
 
-/* ── CARDS [DS-3.5] ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(33,51,99,.06)}
-.card-title{font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+/*  PANELES · blancos, borde 1px, radio 4, sin sombra  */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px}
+.card-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 
-/* ── BADGES [DS-4.4][DS-1.6] ── */
-.badge{display:inline-flex;align-items:center;font-family:var(--mono);font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;white-space:nowrap;letter-spacing:.3px}
-.b-amber{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
-.b-blue{background:#DBEAFE;color:#1E40AF;border:1px solid #BFDBFE}
-.b-green{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
-.b-purple{background:#EDE9FE;color:#4C1D95;border:1px solid #DDD6FE}
-.b-gray{background:#F3F4F6;color:#6B7280;border:1px solid #E5E7EB}
-.b-red{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
-.b-teal{background:#CCFBF1;color:#0F766E;border:1px solid #99F6E4}
-.b-orange{background:#FFEDD5;color:#9A3412;border:1px solid #FED7AA}
+/*  KPIs  */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.stat-label{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase}
+.stat-value{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums}
+.va{color:var(--navy)}.vg{color:var(--accent2)}.vr{color:var(--danger)}.vp{color:var(--muted)}.vm{color:var(--warn)}.vgr{color:var(--muted)}
 
-/* ── BOTONES [DS-4.1] ── */
-.btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.3px;padding:7px 14px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;text-transform:uppercase}
-.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--navy)}
-.btn-success{background:var(--accent2);color:#fff;border-color:var(--accent2)}.btn-success:hover{background:#145E37}
-.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}.btn-ghost:hover{color:var(--text);background:var(--surface2)}
-.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger)}.btn-danger:hover{background:#FEE2E2}
-.btn-sm{padding:4px 10px;font-size:10px}
-.btn:disabled{opacity:.4;cursor:not-allowed}
+/*  TABLAS · fila 40px, regla marcada de 2px navy, dato en mono  */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:2px solid var(--navy);white-space:nowrap;background:var(--surface)}
+td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.click:hover td{background:var(--surface2);cursor:pointer}
+.tracker-table th{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding:10px 12px;text-align:left;border-bottom:2px solid var(--navy);white-space:nowrap;background:var(--surface);position:sticky;top:0;z-index:2}
+.tracker-table th.sortable{cursor:pointer;user-select:none}
+.tracker-table th.sortable:hover{color:var(--navy)}
+.tracker-table td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tracker-table tr:hover td{background:var(--surface2);cursor:pointer}
+.tracker-table tr:last-child td{border-bottom:none}
 
-/* ── MODALES [DS-4.6] ── */
-.overlay{position:fixed;inset:0;background:rgba(33,51,99,.5);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:20px;overflow-y:auto;animation:fadeIn .15s}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:800px;margin:auto;animation:slideUp .2s;box-shadow:0 8px 32px rgba(33,51,99,.18)}
-.modal-xl{max-width:1000px}
-.modal-xxl{max-width:1100px}
-.mhdr{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:12px 12px 0 0}
-.mtitle{font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--navy)}
-.mbody{padding:22px}
-.mftr{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2);border-radius:0 0 12px 12px}
-.mclose{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+/*  FILTROS  */
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-input,.filter-select{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;height:36px;padding:0 10px;outline:none;min-width:150px;transition:var(--tr)}
+.filter-select{cursor:pointer}
+.filter-input:focus,.filter-select:focus{border-width:2px;border-color:var(--action);padding:0 9px}
+
+/*  BADGES DE ESTADO · fondo tenue, texto de estado, mono caja alta  */
+.badge{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:500;padding:3px 8px;border-radius:3px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase}
+.b-amber{background:#FBF1E3;color:#8F5A0B;border:0}
+.b-blue{background:#E6F1F2;color:#056D76;border:0}
+.b-teal{background:#E8F3EF;color:#0E7A5F;border:0}
+.b-red{background:#FAEAE8;color:#B3261E;border:0}
+.b-purple{background:#F4F6F8;color:#4A5560;border:0}
+.b-orange{background:#FBF1E3;color:#8F5A0B;border:0}
+.b-green{background:#E8F3EF;color:#0E7A5F;border:0}
+.b-gray{background:#F4F6F8;color:#4A5560;border:0}
+.urgdot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+
+/*  BOTONES · un solo primario por vista. Nada se mueve al presionar  */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:0;height:36px;padding:0 16px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:var(--tr);white-space:nowrap;text-transform:none}
+.btn-primary{background:var(--action);color:#fff}
+.btn-primary:hover{background:var(--navy)}
+.btn-primary:active{background:var(--action-press)}
+.btn-success{background:var(--accent2);color:#fff}
+.btn-success:hover{background:#0B6249}
+.btn-danger{background:var(--surface);color:var(--danger);border-color:var(--border2)}
+.btn-danger:hover{background:#FAEAE8;border-color:var(--danger)}
+.btn-ghost{background:var(--surface);color:var(--muted);border-color:var(--border2)}
+.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-warn{background:var(--surface);color:var(--warn);border-color:var(--border2)}
+.btn-warn:hover{background:#FBF1E3;border-color:var(--warn)}
+.btn-cond{background:var(--surface);color:var(--muted);border-color:var(--border2)}
+.btn-cond:hover{background:var(--surface2)}
+.btn-confirm{background:var(--surface);color:var(--warn);border-color:var(--border2)}
+.btn-confirm:hover{background:#FBF1E3}
+.btn-sm{height:28px;padding:0 12px;font-size:13px}
+.btn:disabled{background:var(--surface3);color:var(--muted2);border-color:transparent;cursor:not-allowed}
+
+/*  CAPAS FLOTANTES · la única sombra del sistema  */
+.overlay{position:fixed;inset:0;background:rgba(15,20,25,.45);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:24px;overflow-y:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);width:100%;max-width:860px;margin:auto;box-shadow:0 8px 24px rgba(15,20,25,.14)}
+.modal-lg{max-width:1120px}
+.mhdr{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:20px 24px;border-bottom:1px solid var(--border);background:var(--surface);border-radius:var(--r) var(--r) 0 0}
+.mtitle{font-size:18px;font-weight:600;letter-spacing:0;color:var(--navy)}
+.mbody{padding:24px}
+.mftr{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2);border-radius:0 0 var(--r) var(--r)}
+.mclose{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;transition:var(--tr)}
 .mclose:hover{color:var(--navy)}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:1}to{opacity:1}}
+@keyframes slideUp{from{opacity:1}to{opacity:1}}
 
-/* ── FORMULARIOS [DS-4.2] ── */
-.fg{display:flex;flex-direction:column;gap:5px}
-.fg label{font-size:10px;color:var(--navy);letter-spacing:.5px;text-transform:uppercase;font-weight:600}
-.fg input,.fg select,.fg textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 10px;outline:none;transition:border-color .15s}
-.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--blue)}
-.fg textarea{resize:vertical;min-height:60px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.form-section{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--blue);text-transform:uppercase;margin:18px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--light)}
+/*  FORMULARIOS · campo 36px, foco borde 2px  */
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+.fg input,.fg select,.fg textarea{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;height:36px;padding:0 12px;outline:none;transition:var(--tr)}
+.fg textarea{resize:vertical;min-height:72px;height:auto;padding:10px 12px}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-width:2px;border-color:var(--action);padding:0 11px}
+.fg textarea:focus{padding:9px 11px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.form-section{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.items-edit th{font-family:var(--mono);font-size:11px;background:var(--surface)}
+.items-edit td{padding:6px 8px}
+.items-edit input,.items-edit select{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:13px;height:32px;padding:0 8px;width:100%;outline:none;transition:var(--tr)}
+.items-edit input:focus,.items-edit select:focus{border-width:2px;border-color:var(--action);padding:0 7px}
 
-/* ── TOGGLE GROUP (componente propio) ── */
-.toggle-group{display:flex;gap:8px}
-.toggle-btn{flex:1;padding:8px 12px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;letter-spacing:.5px}
-.toggle-btn.selected{border-color:var(--blue);background:var(--blue);color:#fff}
-.toggle-btn.selected.cubierta{border-color:#0E7490;background:#0E7490}
-.toggle-btn.selected.maquinas{border-color:#6B4FA0;background:#6B4FA0}
-.toggle-btn.selected.correctiva{border-color:#C0392B;background:#C0392B}
-.toggle-btn.selected.preventiva{border-color:#1E7A4A;background:#1E7A4A}
+/*  TRAZABILIDAD  */
+.tl{list-style:none}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--border)}
+.tl-dot{width:24px;height:24px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;z-index:1}
+.tl-dot.c{border-color:var(--action);color:var(--action);background:#E6F1F2}
+.tl-dot.a{border-color:var(--accent2);color:var(--accent2);background:#E8F3EF}
+.tl-dot.r{border-color:var(--danger);color:var(--danger);background:#FAEAE8}
+.tl-dot.u{border-color:var(--warn);color:var(--warn);background:#FBF1E3}
+.tl-ev{font-size:14px;font-weight:500;color:var(--navy)}
+.tl-meta{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
 
-/* ── STATS [DS-11.3] ── */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;box-shadow:0 1px 4px rgba(33,51,99,.06)}
-.stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
-/* [DS-11.3] stat-value 28px desktop */
-.stat-value{font-family:var(--mono);font-size:28px;font-weight:700}
+/*  FILA DE REQUISICIÓN · el estado va en el borde izquierdo de 3px  */
+.req-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:var(--tr)}
+.req-row:hover{border-color:var(--navy)}
+.req-row.unread{border-left:3px solid var(--action)}
+.req-row.devuelto{border-left:3px solid var(--warn)}
+.req-row.pend-confirm{border-left:3px solid var(--warn)}
+.req-title{font-weight:600;font-size:15px;margin-bottom:6px;color:var(--navy)}
+.req-meta{display:flex;gap:16px;font-size:13px;color:var(--muted);flex-wrap:wrap;align-items:center}
 
-/* ── FILTROS [DS-4.8] ── */
-.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
-.filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;cursor:pointer}
-.filter-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;min-width:200px}
+/*  AVISOS  */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-left-width:3px;border-radius:var(--r);padding:14px 16px;font-size:14px;z-index:300;max-width:360px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(15,20,25,.14)}
+.n-green{border-left-color:var(--accent2)}.n-red{border-left-color:var(--danger)}.n-amber{border-left-color:var(--warn)}.n-blue{border-left-color:var(--action)}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:14px}
+.info-box.accent{border-left:3px solid var(--action)}
+.info-box.warn{border-left:3px solid var(--warn)}
+.info-box.danger{border-left:3px solid var(--danger)}
+.info-box.orange{border-left:3px solid var(--warn)}
 
-/* ── SSRR CARD (componente propio) ── */
-.ssrr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(33,51,99,.05)}
-.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
-.ssrr-hdr-main{flex:1;cursor:pointer;min-width:0}
-.ssrr-hdr-main:hover .ssrr-num{color:var(--blue);text-decoration:underline}
-.ssrr-expand{padding:4px 8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;flex-shrink:0;border-radius:4px}
-.ssrr-expand:hover{background:var(--border);color:var(--navy)}
-.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy);transition:color .15s}
-.ssrr-meta{font-size:11px;color:var(--muted);margin-top:2px}
-
-/* ── TABLA DE ITEMS ── */
-.items-table{width:100%;border-collapse:collapse}
-.items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
-.items-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
-.items-table tr:last-child td{border-bottom:none}
-.items-table tr:hover td{background:var(--surface2)}
-.item-num-cell{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap}
-.item-desc-cell{font-size:12px;color:var(--text);max-width:240px}
-.item-obs-cell{font-size:10px;color:var(--muted);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.item-remito{font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:600}
-
-/* ── ITEM CARD (vista mobile/modal) ── */
-.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;transition:all .15s}
-.item-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.item-card-num{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0}
-.item-card-desc{font-size:13px;color:var(--text);font-weight:500;flex:1;min-width:0}
-/* [DS-10.2] acciones al nivel 4, separadas de la info */
-.item-card-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap}
-.item-card-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.item-card-field{display:flex;flex-direction:column;gap:2px}
-.item-card-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase}
-.item-card-value{font-size:11px;color:var(--text)}
-
-/* ── BOTONES ESPECIALIZADOS (propios del módulo) ── */
-.clip-btn{background:none;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--muted);font-size:14px;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
-.clip-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--surface)}
-.clip-btn.has-file{border-color:var(--accent2);color:var(--accent2)}
-.cumplir-btn{background:none;border:2px solid var(--accent2);border-radius:var(--r);padding:4px 10px;cursor:pointer;color:var(--accent2);font-size:10px;font-weight:700;font-family:var(--sans);text-transform:uppercase;letter-spacing:.5px;transition:all .15s}
-.cumplir-btn:hover{background:var(--accent2);color:#fff}
-.cumplir-btn:disabled{opacity:.4;cursor:not-allowed}
-.adjunto-link{font-size:10px;color:var(--blue);text-decoration:none;font-family:var(--mono);display:inline-flex;align-items:center;gap:3px}
-.adjunto-link:hover{text-decoration:underline}
-
-/* ── DETAIL GRID (modal detalle) ── */
-.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
-.detail-field{display:flex;flex-direction:column;gap:3px}
-.detail-label{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
-.detail-value{font-size:13px;color:var(--text);font-weight:500}
-
-/* ── NOTIFICACIONES [DS-4.5] ── */
-.notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-left-width:3px;border-radius:var(--r2);padding:12px 16px;font-size:13px;animation:slideUp .2s;z-index:300;max-width:340px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(33,51,99,.15)}
-.n-green{border-left-color:var(--accent2)}.n-red{border-left-color:var(--danger)}.n-amber{border-left-color:var(--warn)}.n-blue{border-left-color:var(--blue)}
-
-/* ── INFO-BOXES [DS-4.9][DS-11.4] ── */
-.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:12px}
-.info-box.accent{border-left:3px solid var(--blue)}
-.info-box.warn{border-left:3px solid var(--warn);background:#FFFBEB}
-.info-box.danger{border-left:3px solid var(--danger);background:#FEF2F2}
-
-/* ── ACTION CARDS [DS-10.4] ── */
-.req-row-actions{display:flex;flex-direction:row;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);justify-content:flex-end}
-.form-footer-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;border-top:1px solid var(--border);padding-top:14px;margin-top:16px}
-
-/* ── UTILITARIOS [DS-6.3][DS-11.8] ── */
-/* [DS-10.6] flex-gap con flex-wrap:wrap */
+/*  UTILIDADES  */
 .flex-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
 .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
-.pb14{padding-bottom:14px}
-.text-mono{font-family:var(--mono)}.text-muted{color:var(--muted)}
-.empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px}
-.loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);gap:10px;font-size:13px}
+.text-mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.text-muted{color:var(--muted)}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:15px}
+.loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);gap:12px;font-size:15px}
 .spin{animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.kbar{margin-bottom:12px}
+.kbar-lbl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.kbar-track{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;border:0}
+.kbar-fill{height:100%;border-radius:3px}
+.tabs-row{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
+.tab{font-size:14px;font-weight:500;padding:10px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:var(--tr);text-transform:none;letter-spacing:0;margin-bottom:-1px;white-space:nowrap}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--action);border-bottom-color:var(--action)}
+.grupo-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:3px;font-family:var(--mono);font-size:12px;font-weight:500;background:var(--surface2);color:var(--navy);border:1px solid var(--border);flex-shrink:0}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:3px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.fecha-chip{display:inline-flex;flex-direction:column;gap:2px;font-family:var(--mono);font-size:11px;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fecha-chip span:first-child{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tracker-simple-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.tracker-simple-row.en-curso{border-left:3px solid var(--warn)}
+.tracker-simple-row.entregado{border-left:3px solid var(--accent2)}
+.req-row-actions{display:flex;flex-direction:row;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);justify-content:flex-end}
+.cotiz-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
 
-/* ── MOBILE NAV [DS-4.10] ── */
-.mobile-nav{display:none}
+/*  MOBILE  */
+@media (max-width: 768px) {
+  .app { flex-direction: column; }
+  .sidebar { display: none; }
+  .main { width: 100%; padding-bottom: 72px; }
+  .topbar { padding: 0 16px; }
+  .content { padding: 16px; }
+  .card { padding: 16px; margin-bottom: 12px; }
+  .stats { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat { padding: 14px; }
+  .stat-value { font-size: 24px; }
+  .form-grid, .form-grid-3 { grid-template-columns: 1fr; gap: 12px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 13px; min-width: 540px; }
+  th, td { padding: 10px 8px; }
+  .tracker-table th, .tracker-table td { padding: 10px 8px; }
+  .filter-row { flex-direction: column; align-items: stretch; }
+  .filter-input, .filter-select { min-width: unset; width: 100%; }
+  .btn { height: 44px; padding: 0 14px; }
+  .btn-sm { height: 36px; }
+  .mftr { flex-wrap: wrap; gap: 8px; }
+  .mftr .btn { flex: 1; justify-content: center; }
+  .overlay { padding: 0; align-items: flex-end; }
+  .modal { border-radius: var(--r) var(--r) 0 0; max-width: 100%; max-height: 92vh; overflow-y: auto; }
+  .modal-lg { max-width: 100%; }
+  .req-meta { gap: 10px; }
+  .req-title { font-size: 15px; }
+  .tabs-row { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { font-size: 13px; padding: 10px 12px; }
+  .notif { bottom: 88px; right: 12px; left: 12px; max-width: unset; }
+  .items-edit { font-size: 13px; }
+  .items-edit th, .items-edit td { padding: 6px; }
+  .items-edit table { min-width: 380px; }
+  .req-row-actions{flex-direction:column;gap:8px;width:100%}
+  .req-row-actions .btn{width:100%}
+  .mftr{flex-direction:column;align-items:stretch;gap:8px}
+  .mftr .btn{width:100%;flex:unset}
+  .mftr .btn-success{order:-3}.mftr .btn-primary{order:-2}.mftr .btn-danger{order:-1}
+  .card-title{flex-direction:column;align-items:flex-start;gap:10px}
+  .card-title .btn{width:100%}
+  .filter-row .btn{width:100%}
+  .form-footer-actions{flex-direction:column !important;align-items:stretch !important}
+  .form-footer-actions .btn{width:100%}
+  .cotiz-grid{grid-template-columns:1fr !important}
+  .req-row .flex-between{flex-direction:column;align-items:flex-start;gap:10px}
+  .req-row .flex-between > .flex-gap:last-child{width:100%;flex-direction:column;gap:8px}
+  .req-row .flex-between > .flex-gap:last-child .btn{width:100%}
+}
 
-/* ── RESPONSIVE [DS-5.1][DS-5.2] — breakpoint único 768px ── */
-@media(max-width:768px){
-  /* Layout */
-  .app{flex-direction:column}
+/*  NAVEGACIÓN INFERIOR (solo mobile)  */
+@media (max-width: 768px) {
+  .mobile-nav {
+    display: flex !important;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--nav); border-top: 1px solid rgba(255,255,255,.14);
+    z-index: 50; height: 64px;
+    justify-content: space-around; align-items: center;
+    padding: 0 4px; overflow-x: auto;
+  }
+  .mobile-nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; padding: 8px; border-radius: var(--r);
+    color: rgba(255,255,255,.72); transition: var(--tr); flex: 1;
+    position: relative; min-width: 48px; min-height: 48px; justify-content: center;
+  }
+  .mobile-nav-item.active { color: #fff; background: rgba(255,255,255,.12); }
+  .mobile-nav-item:hover { color: #fff; }
+  .mobile-nav-icon { font-size: 16px; line-height: 1; }
+  .mobile-nav-label { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+  .mobile-nav-badge {
+    position: absolute; top: 4px; right: 8px;
+    background: rgba(255,255,255,.14); color: #fff;
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    padding: 1px 5px; border-radius: 3px; min-width: 16px; text-align: center;
+  }
+  .mobile-nav-badge.amber { background: rgba(255,255,255,.14); }
+  .mobile-nav-badge.gray { background: rgba(255,255,255,.14); }
+}
+@media (min-width: 769px) {
+  .mobile-nav { display: none !important; }
+}
+
+/*  ARMAZÓN · shell del prototipo 
+   La navegación del módulo es BLANCA con borde derecho; el navy es la barra
+   superior. El ítem activo lleva borde izquierdo de 3px en el color de acción.
+    */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);align-items:stretch;min-height:100vh}
+.shell.is-collapsed{grid-template-columns:68px minmax(0,1fr)}
+
+.appbar{height:56px;background:var(--nav);display:flex;align-items:center;gap:24px;padding:0 24px;flex:0 0 auto}
+.appbar-iso{height:26px;width:auto;object-fit:contain;display:block;flex:0 0 auto}
+.appbar-div{width:1px;height:24px;background:rgba(255,255,255,.14);flex:0 0 auto}
+.appbar-instance{font:500 14px/1.2 var(--sans);color:#fff;white-space:nowrap;flex:0 0 auto}
+.appbar-search{flex:1;max-width:380px;display:flex;align-items:center;gap:10px;height:32px;padding:0 12px;background:rgba(255,255,255,.10);border:0;border-radius:var(--r);font:400 14px/1.2 var(--sans);color:rgba(255,255,255,.72)}
+.appbar-search::placeholder{color:rgba(255,255,255,.72)}
+.appbar-tools{margin-left:auto;display:flex;align-items:center;gap:16px}
+.appbar-avatar{width:28px;height:28px;border-radius:var(--r);background:rgba(255,255,255,.14);color:#fff;font-family:var(--mono);font-size:12px;font-weight:500;line-height:28px;text-align:center;flex:0 0 auto}
+.appbar-user{font:500 13px/1.25 var(--sans);color:#fff;white-space:nowrap}
+.appbar-link{background:none;border:0;padding:0;cursor:pointer;font:500 13px/1.2 var(--sans);color:rgba(255,255,255,.86);white-space:nowrap}
+.appbar-link:hover{color:#fff;text-decoration:underline}
+
+.sidebar{width:auto;min-width:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-header{border-bottom:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px;min-height:69px}
+.sidebar-logo-img{width:32px;height:32px;object-fit:contain;border:0;border-radius:0;background:none;flex:0 0 auto}
+.sidebar-logo-main{font:600 15px/1.3 var(--sans);color:var(--navy);letter-spacing:0;text-transform:none}
+.sidebar-logo-sub{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-section{padding:14px 16px 8px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:left}
+.ni{display:flex;align-items:center;gap:12px;width:100%;padding:9px 16px 9px 13px;background:transparent;border:0;border-left:3px solid transparent;cursor:pointer;text-align:left;font:400 14px/1.3 var(--sans);color:var(--muted);transition:var(--tr);min-height:38px}
+.ni:hover{background:var(--surface2);color:var(--navy)}
+.ni.active{background:var(--surface2);border-left-color:var(--action);color:var(--navy);font-weight:500}
+.ni-ico{display:block;flex:0 0 auto;color:var(--muted2)}
+.ni.active .ni-ico{color:var(--action)}
+.ni-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ni-badge{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--muted);background:var(--surface2);padding:3px 6px;border-radius:3px;min-width:22px;text-align:center;border:1px solid var(--border)}
+.ni.active .ni-badge{color:var(--action);background:var(--surface);border-color:var(--border2)}
+.ni-badge.amber{color:var(--warn)}
+.ni-badge.gray{color:var(--muted)}
+.sidebar-foot{border-top:1px solid var(--border);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.sidebar-foot-btn{display:flex;align-items:center;gap:12px;width:100%;padding:9px 10px;background:none;border:0;border-radius:var(--r);cursor:pointer;font:500 13px/1.2 var(--sans);color:var(--muted);transition:var(--tr)}
+.sidebar-foot-btn:hover{background:var(--surface2);color:var(--navy)}
+.sidebar-foot-meta{padding:8px 10px 0;font-family:var(--mono);font-size:11px;font-weight:500;line-height:1.6;letter-spacing:.06em;color:var(--muted2)}
+.shell.is-collapsed .sidebar-header{justify-content:center;padding:16px 8px}
+.shell.is-collapsed .ni{justify-content:center;padding:9px 8px 9px 5px}
+.shell.is-collapsed .sidebar-foot-btn{justify-content:center}
+
+/*  encabezado de pantalla  */
+.pagehead{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;flex:0 0 auto}
+.crumb{display:flex;align-items:center;gap:8px;font:400 13px/1.2 var(--sans);color:var(--muted)}
+.crumb button{background:none;border:0;padding:0;cursor:pointer;font:400 13px/1.2 var(--sans);color:var(--action)}
+.crumb button:hover{text-decoration:underline;color:var(--navy)}
+.crumb-current{color:var(--text)}
+.pagehead-row{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-top:10px}
+.pagehead h1{font:600 24px/1.25 var(--sans);color:var(--navy);margin:0}
+.pagehead p{font:400 13px/1.45 var(--sans);color:var(--muted);margin:6px 0 0;max-width:70ch}
+.pagehead-actions{display:flex;gap:8px;flex:0 0 auto}
+
+@media (max-width:768px){
+  .shell,.shell.is-collapsed{grid-template-columns:1fr}
   .sidebar{display:none}
-  .main{width:100%;padding-bottom:72px}
-  .topbar{padding:10px 16px}
-  .topbar-title{font-size:11px}
-  .content{padding:14px 14px;overflow-x:hidden}
-  .card{padding:14px;margin-bottom:12px}
-
-  /* Grids a 1 columna [DS-5.2] */
-  .form-grid{grid-template-columns:1fr;gap:10px}
-  .form-grid-3{grid-template-columns:1fr;gap:10px}
-  .form-grid-4{grid-template-columns:1fr 1fr;gap:10px}
-  .detail-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .item-card-body{grid-template-columns:1fr}
-
-  /* Stats 2 columnas [DS-11.3] */
-  .stats{grid-template-columns:1fr 1fr;gap:8px}
-  .stat{padding:12px}
-  .stat-value{font-size:22px}
-
-  /* Tablas con scroll interno [DS-5.2] */
-  .items-table{min-width:600px}
-  .ssrr-card .items-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-  /* Filtros columna [DS-5.2] */
-  .filter-row{flex-direction:column;align-items:stretch}
-  .filter-input,.filter-select{min-width:unset;width:100%}
-  .filter-row .btn{width:100%;justify-content:center}
-
-  /* Modales bottom-sheet [DS-5.2][DS-4.6] */
-  .overlay{padding:0;align-items:flex-end}
-  .modal{border-radius:16px 16px 0 0;max-width:100%;max-height:92vh;overflow-y:auto}
-
-  /* Modal footer columna + orden [DS-10.4] */
-  .mftr{flex-direction:column;align-items:stretch;gap:6px}
-  .mftr .btn{width:100%;justify-content:center;flex:unset;min-height:48px}
-  .mftr .btn-success{order:-3}
-  .mftr .btn-primary{order:-2}
-  .mftr .btn-danger{order:-1}
-
-  /* Action cards columna [DS-10.4] */
-  .req-row-actions{flex-direction:column;width:100%}
-  .req-row-actions .btn{width:100%;justify-content:center;min-height:48px}
-  .form-footer-actions{flex-direction:column;align-items:stretch}
-  .form-footer-actions .btn{width:100%;justify-content:center;min-height:48px}
-  .form-footer-actions .btn-primary{order:-2}
-  .form-footer-actions .btn-success{order:-3}
-
-  /* Item card actions en mobile */
-  .item-card-actions{width:100%;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-  .cumplir-btn{width:100%;justify-content:center;text-align:center;padding:10px}
-  .item-card-header{flex-wrap:wrap}
-
-  /* Toggle group en mobile */
-  .toggle-group{flex-direction:column}
-  .toggle-btn{padding:10px 12px}
-
-  /* Tap targets mínimos [DS-11.10] */
-  .btn{min-height:44px}
-  .btn-sm{min-height:36px}
-  .fg input,.fg select{min-height:44px}
-  .cumplir-btn{min-height:44px}
-  .clip-btn{min-height:44px;padding:8px 12px}
-
-  /* Notif encima del bottom-nav [DS-5.2] */
-  .notif{bottom:80px;right:10px;left:10px;max-width:unset}
-
-  /* Mobile Nav visible [DS-4.10] */
-  .mobile-nav{
-    display:flex;
-    position:fixed;bottom:0;left:0;right:0;
-    background:var(--navy);
-    border-top:1px solid rgba(255,255,255,.1);
-    z-index:50;height:64px;
-    justify-content:space-around;align-items:center;
-    padding:0 8px;
-    box-shadow:0 -2px 12px rgba(33,51,99,.2);
-  }
-  .mn-item{
-    display:flex;flex-direction:column;align-items:center;gap:3px;
-    cursor:pointer;padding:6px 8px;border-radius:8px;
-    color:rgba(255,255,255,.5);transition:all .15s;flex:1;
-    min-height:44px;justify-content:center;
-    background:none;border:none;font-family:var(--sans);
-  }
-  .mn-item.active{color:#fff;background:rgba(255,255,255,.1)}
-  .mn-item:hover{color:#fff}
-  .mn-icon{font-size:18px;line-height:1}
-  .mn-label{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;font-family:var(--mono)}
+  .appbar{gap:12px;padding:0 16px}
+  .appbar-search,.appbar-instance{display:none}
+  .pagehead{padding:14px 16px}
+  .pagehead-row{flex-direction:column;align-items:stretch;gap:12px}
+  .pagehead-actions .btn{flex:1}
+  .main{padding-bottom:72px}
 }
 
-/* Desktop: mobile-nav oculto [DS-5.3] */
-@media(min-width:769px){
-  .mobile-nav{display:none !important}
-}
 `;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+//  HELPERS 
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -329,7 +393,7 @@ const ordenarSolicitudes = (sols) => {
   });
 };
 
-// ─── API ─────────────────────────────────────────────────────────────────────
+//  API 
 const api = {
   async getSolicitudes(barco) {
     let q = supabase.from("ssrr_solicitudes").select("*, ssrr_items(*)");
@@ -380,7 +444,7 @@ const api = {
   },
 };
 
-// ─── COMPONENTES BASE ─────────────────────────────────────────────────────────
+//  COMPONENTES BASE 
 function Notif({ msg, onClose }) {
   if (!msg) return null;
   const cls = { success: "n-green", error: "n-red", warn: "n-amber", info: "n-blue" }[msg.type] || "n-blue";
@@ -421,7 +485,7 @@ function BadgeTipoRep({ tipo }) {
   return <span className={`badge ${tipo === "Correctiva" ? "b-red" : "b-green"}`}>{tipo}</span>;
 }
 
-// ─── MODAL: CUMPLIR ───────────────────────────────────────────────────────────
+//  MODAL: CUMPLIR 
 function ModalCumplir({ item, onClose, onSave, notify }) {
   const [form, setForm] = useState({ realizado_por: "", fecha_realizacion: today(), nro_remito: "" });
   const [archivo, setArchivo] = useState(null);
@@ -477,7 +541,7 @@ function ModalCumplir({ item, onClose, onSave, notify }) {
             <label>Adjunto (remito, foto, etc.)</label>
             <div className="flex-gap">
               <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current.click()} type="button">
-                📎 {archivo ? archivo.name : "Seleccionar archivo"}
+                 {archivo ? archivo.name : "Seleccionar archivo"}
               </button>
               {archivo && <button onClick={() => setArchivo(null)} style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 14 }}>✕</button>}
             </div>
@@ -495,7 +559,7 @@ function ModalCumplir({ item, onClose, onSave, notify }) {
   );
 }
 
-// ─── ITEM ACCIONES (barco) ─────────────────────────────────────────────────────
+//  ITEM ACCIONES (barco) 
 function ItemAccionesBarco({ item, onUpdated, onEliminar, notify }) {
   const [modalCumplir, setModalCumplir] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -535,10 +599,10 @@ function ItemAccionesBarco({ item, onUpdated, onEliminar, notify }) {
         </button>
       )}
       <button className={`clip-btn ${item.adjunto_url ? "has-file" : ""}`} onClick={() => fileRef.current.click()} disabled={loading} title={item.adjunto_url ? "Reemplazar adjunto" : "Subir adjunto"}>
-        📎
+        
       </button>
       <button className="clip-btn" onClick={handleEliminar} disabled={loading} title="Eliminar ítem" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>
-        🗑
+        
       </button>
       <input ref={fileRef} type="file" style={{ display: "none" }} onChange={handleFileChange} />
       {modalCumplir && (
@@ -549,7 +613,7 @@ function ItemAccionesBarco({ item, onUpdated, onEliminar, notify }) {
   );
 }
 
-// ─── MODAL: ITEM ──────────────────────────────────────────────────────────────
+//  MODAL: ITEM 
 function ItemModal({ item, onClose, onSave, esBarco }) {
   const [form, setForm] = useState({ ...item });
   const [saving, setSaving] = useState(false);
@@ -613,7 +677,7 @@ function ItemModal({ item, onClose, onSave, esBarco }) {
           {item.adjunto_url && (
             <div className="mt12">
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Adjunto</div>
-              <a href={item.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link">📎 Ver archivo adjunto →</a>
+              <a href={item.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link"> Ver archivo adjunto →</a>
             </div>
           )}
         </div>
@@ -626,7 +690,7 @@ function ItemModal({ item, onClose, onSave, esBarco }) {
   );
 }
 
-// ─── MODAL: SOLICITUD DETALLE ─────────────────────────────────────────────────
+//  MODAL: SOLICITUD DETALLE 
 function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
   const [itemModal, setItemModal] = useState(null);
   const [items, setItems] = useState(sol.ssrr_items || []);
@@ -695,7 +759,7 @@ function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
                   {it.realizado_por && <div className="item-card-field"><div className="item-card-label">Realizado por</div><div className="item-card-value">{it.realizado_por}{it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}</div></div>}
                   {it.fecha_realizacion && <div className="item-card-field"><div className="item-card-label">Fecha realización</div><div className="item-card-value">{fmtDate(it.fecha_realizacion)}</div></div>}
                   {it.nro_remito && <div className="item-card-field"><div className="item-card-label">N° Remito</div><div className="item-card-value" style={{ fontFamily: "var(--mono)", color: "var(--blue)" }}>{it.nro_remito}</div></div>}
-                  {it.adjunto_url && <div className="item-card-field"><div className="item-card-label">Adjunto</div><a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver archivo →</a></div>}
+                  {it.adjunto_url && <div className="item-card-field"><div className="item-card-label">Adjunto</div><a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}> Ver archivo →</a></div>}
                 </div>
               )}
               {/* [DS-10.2] Nivel 4: acciones al fondo */}
@@ -718,7 +782,7 @@ function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
   );
 }
 
-// ─── MODAL: NUEVA SOLICITUD ───────────────────────────────────────────────────
+//  MODAL: NUEVA SOLICITUD 
 function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   const [form, setForm] = useState({
     barco: barcoDefault || "Golondrina de Mar",
@@ -805,7 +869,7 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   );
 }
 
-// ─── SOLICITUD CARD ───────────────────────────────────────────────────────────
+//  SOLICITUD CARD 
 function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
   const [loadingDel, setLoadingDel] = useState(false);
@@ -843,10 +907,10 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
           <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
           {esBarco && (
             <button className="ssrr-expand" onClick={handleEliminarSol} disabled={loadingDel} title="Eliminar solicitud completa" style={{ color: "var(--danger)" }}>
-              🗑
+              
             </button>
           )}
-          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>{expanded ? "▲" : "▼"}</button>
+          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)} title={expanded ? "Colapsar" : "Expandir"}>{expanded ? "" : ""}</button>
         </div>
       </div>
 
@@ -882,7 +946,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
                     <td style={{ fontSize: 10, color: "var(--muted)" }}>{it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td className="item-remito">{it.nro_remito || "—"}</td>
-                    <td>{it.adjunto_url ? <a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver</a> : "—"}</td>
+                    <td>{it.adjunto_url ? <a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}> Ver</a> : "—"}</td>
                     {esBarco && (
                       <td onClick={e => e.stopPropagation()}>
                         <ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} onEliminar={onRefresh} />
@@ -899,7 +963,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
   );
 }
 
-// ─── PAGE PANEL ───────────────────────────────────────────────────────────────
+//  PAGE PANEL 
 function PagePanel({ barco, notify, esBarco }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -948,7 +1012,7 @@ function PagePanel({ barco, notify, esBarco }) {
         <div className="stat"><div className="stat-label">Anulados</div><div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div></div>
       </div>
       <div className="filter-row">
-        <input className="filter-input" placeholder="🔍 Buscar ítem o N° SSRR..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+        <input className="filter-input" placeholder=" Buscar ítem o N° SSRR..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         <select className="filter-select" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
           <option value="">Todos los estados</option>
           {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -958,7 +1022,7 @@ function PagePanel({ barco, notify, esBarco }) {
       </div>
 
       {loading ? <div className="loading"><span className="spin">◌</span> Cargando...</div> :
-        solFiltradas.length === 0 ? <div className="empty-state"><div style={{ fontSize: 28, marginBottom: 8 }}>🔧</div>Sin solicitudes registradas</div> :
+        solFiltradas.length === 0 ? <div className="empty-state"><div style={{ fontSize: 28, marginBottom: 8 }}></div>Sin solicitudes registradas</div> :
         solFiltradas.map(sol => (
           <SolicitudCard key={sol.id} sol={sol} onVerDetalle={setSolicitudModal} onItemClick={setItemModal} esBarco={esBarco} notify={notify} onRefresh={load} />
         ))
@@ -976,7 +1040,7 @@ function PagePanel({ barco, notify, esBarco }) {
   );
 }
 
-// ─── LOGIN PAGE — DS §8.7 / §9.1-C / §11.12.3 ────────────────────────────────
+//  LOGIN PAGE — DS §8.7 / §9.1-C / §11.12.3 
 function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -993,60 +1057,44 @@ function LoginScreen() {
 
   // [DS-1.5][DS-8.7][DS-9.1-C] paleta scoped: #0B1629, teal #1A7A6E, gold #B8942A
   const loginCSS = `
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
-    .login-page{min-height:100vh;display:flex;background:#0B1629;position:relative;overflow:hidden}
-    .login-bg-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,rgba(11,22,41,0.92) 0%,rgba(11,22,41,0.75) 60%,rgba(11,22,41,0.92) 100%)}
-    /* [DS-9.1-C] grid teal rgba(26,122,110,.06) cada 60px */
-    .login-bg-lines{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(26,122,110,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(26,122,110,0.06) 1px,transparent 1px);background-size:60px 60px}
-    .login-split{position:relative;z-index:2;display:flex;width:100%}
-    /* [DS-8.7] panel izquierdo */
-    .login-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:80px 60px;border-right:1px solid rgba(26,122,110,0.2)}
-    .login-left-integra-wrap{margin-bottom:8px}
-    .login-left-integra-img{height:340px;width:auto;object-fit:contain;opacity:0.95}
-    .login-left-divider{width:100%;height:1px;background:rgba(255,255,255,0.1);margin:8px 0 20px}
-    .login-left-company{display:flex;align-items:center;gap:14px;margin-bottom:4px}
-    /* [DS-7.2] logo circular 50% */
-    .login-left-company-logo{width:48px;height:48px;border-radius:50%;object-fit:contain;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05)}
-    /* [DS-8.7] nombre empresa/módulo 20px/800 */
-    .login-left-company-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:0.5px}
-    /* [DS-9.1-C] línea teal 3px/48px */
-    .login-left-line{width:48px;height:3px;background:#1A7A6E;margin:20px 0}
-    /* [DS-9.1-C] tagline itálica */
-    .login-left-sub{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;max-width:320px;font-style:italic}
-    /* [DS-8.7] panel derecho */
-    .login-right{width:440px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:60px 48px}
-    /* [DS-7.3][DS-8.7] card border gold rgba(184,148,42,.2) blur */
-    .login-card{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(184,148,42,0.2);border-radius:16px;padding:40px 36px;backdrop-filter:blur(20px)}
-    /* [DS-8.7] eyebrow DM Mono 9px gold */
-    .login-card-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:#B8942A;text-transform:uppercase;margin-bottom:10px}
-    .login-card-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
-    .login-card-sub{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-bottom:28px;text-transform:uppercase}
-    .login-fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-    .login-fg label{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;font-weight:600}
-    .login-fg input{border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:11px 14px;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;background:rgba(255,255,255,0.06);outline:none;transition:border-color .15s}
-    .login-fg input::placeholder{color:rgba(255,255,255,0.2)}
-    /* [DS-8.7] focus gold */
-    .login-fg input:focus{border-color:#B8942A;background:rgba(255,255,255,0.09)}
-    /* [DS-8.7] botón fondo gold #B8942A texto #0B1629 */
-    .login-btn{width:100%;padding:12px;margin-top:8px;background:#B8942A;color:#0B1629;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;letter-spacing:.5px}
-    .login-btn:hover{background:#D4AA3A}
-    .login-btn:disabled{opacity:.5;cursor:not-allowed}
-    .login-error{background:rgba(239,68,68,0.12);color:#FCA5A5;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:14px}
-    .login-footer{text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.2);margin-top:20px;letter-spacing:1px}
-    /* [DS-8.7][DS-11.12.3] mobile — Optical Centering Rule VIGENTE */
-    @media(max-width:768px){
-      .login-split{flex-direction:column}
-      .login-left{padding:48px 32px 32px;border-right:none;border-bottom:1px solid rgba(26,122,110,0.2);align-items:center;text-align:center}
-      .login-left-integra-img{height:200px;max-width:90vw}
-      .login-left-line{margin:16px auto}
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    .login-page{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 560px;background:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;color:#0F1419;text-align:left}
+    .login-bg-overlay,.login-bg-lines{display:none}
+    .login-split{display:contents}
+    .login-left{display:flex;flex-direction:column;justify-content:space-between;gap:48px;padding:56px 64px;background:#002247;border:0;text-align:left}
+    .login-left-integra-wrap{margin:0}
+    .login-left-integra-img{height:52px;width:auto;object-fit:contain;opacity:1;display:block}
+    .login-left-divider{width:100%;height:1px;background:rgba(255,255,255,.14);margin:24px 0}
+    .login-left-company{display:flex;align-items:center;gap:14px;margin:0}
+    .login-left-company-logo{width:40px;height:40px;border-radius:4px;object-fit:contain;border:0;background:rgba(255,255,255,.14);padding:4px}
+    .login-left-company-name{font:600 24px/1.25 'IBM Plex Sans',sans-serif;color:#fff;letter-spacing:0}
+    .login-left-line{width:56px;height:3px;background:#F8BC05;margin:24px 0}
+    .login-left-sub{font:400 15px/1.55 'IBM Plex Sans',sans-serif;color:rgba(255,255,255,.82);max-width:420px;font-style:normal}
+    .login-right{width:auto;display:flex;align-items:center;justify-content:center;padding:56px 64px;background:#FFFFFF}
+    .login-card{width:100%;max-width:420px;background:transparent;border:0;border-radius:0;padding:0;backdrop-filter:none;text-align:left}
+    .login-card-eyebrow{font:500 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#4A5560;text-transform:uppercase;margin-bottom:12px}
+    .login-card-title{font:600 24px/1.25 'IBM Plex Sans',sans-serif;color:#082F4E;margin-bottom:8px}
+    .login-card-sub{font:400 15px/1.55 'IBM Plex Sans',sans-serif;color:#4A5560;letter-spacing:0;margin-bottom:28px;text-transform:none}
+    .login-fg{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+    .login-fg label{font:500 11px/1.2 'IBM Plex Mono',monospace;color:#4A5560;letter-spacing:.08em;text-transform:uppercase}
+    .login-fg input{border:1px solid #C9D0D6;border-radius:4px;height:40px;padding:0 12px;font:400 14px/1.2 'IBM Plex Sans',sans-serif;color:#0F1419;background:#FFFFFF;outline:none;transition:border-color 120ms cubic-bezier(.2,0,.38,.9)}
+    .login-fg input::placeholder{color:#7A8792}
+    .login-fg input:focus{border-width:2px;border-color:#002247;padding:0 11px}
+    .login-btn{width:100%;height:44px;padding:0 16px;margin-top:24px;background:#F8BC05;color:#002247;border:none;border-radius:4px;font:600 15px/1.2 'IBM Plex Sans',sans-serif;cursor:pointer;transition:background-color 120ms cubic-bezier(.2,0,.38,.9);letter-spacing:0}
+    .login-btn:hover{background:#DCA704}
+    .login-btn:disabled{background:#E4E8EC;color:#7A8792;cursor:not-allowed}
+    .login-error{background:#FFFFFF;color:#0F1419;border:1px solid #E4E8EC;border-left:3px solid #B3261E;border-radius:4px;padding:12px 16px;font:400 13px/1.45 'IBM Plex Sans',sans-serif;margin-bottom:16px}
+    .login-footer{text-align:left;font:500 11px/1.2 'IBM Plex Mono',monospace;color:#4A5560;margin-top:32px;letter-spacing:.06em}
+    .login-back{text-align:left;margin-top:12px;font:500 14px/1.2 'IBM Plex Sans',sans-serif;color:#002247;cursor:pointer}
+    .login-back:hover{text-decoration:underline}
+    @media(max-width:900px){
+      .login-page{grid-template-columns:1fr}
+      .login-left{padding:40px 24px;gap:32px}
+      .login-left-integra-img{height:40px}
       .login-left-sub{max-width:100%}
-      /* [DS-11.12.3] contenedor: flex + center */
-      .login-right{width:100%;padding:32px 28px 56px;display:flex;justify-content:center;align-items:flex-start}
-      /* [DS-11.12.3] card: 80vw, max 340px */
-      .login-card{width:min(340px,80vw);max-width:340px;margin:0 auto;padding:32px 28px}
+      .login-right{padding:40px 24px}
     }
-    @media(max-width:414px){ .login-card{width:min(332px,80vw)} }
-    @media(max-width:390px){ .login-card{width:min(312px,80vw);padding:28px 24px} }
+  
   `;
 
   return (
@@ -1057,10 +1105,10 @@ function LoginScreen() {
         <div className="login-bg-overlay" />
         <div className="login-split">
 
-          {/* ── Izquierda: marca INTEGRA ── */}
+          {/*  Izquierda: marca INTEGRA  */}
           <div className="login-left">
             <div className="login-left-integra-wrap">
-              <img src="/integralogo.png" alt="INTEGRA" className="login-left-integra-img" />
+              <img src="/integra-logo-white-noclaim.svg" alt="INTEGRA" className="login-left-integra-img" />
             </div>
             <div className="login-left-divider" />
             <div className="login-left-company">
@@ -1071,7 +1119,7 @@ function LoginScreen() {
             <div className="login-left-sub">We Find the Way, or We Make One.</div>
           </div>
 
-          {/* ── Derecha: formulario ── */}
+          {/*  Derecha: formulario  */}
           <div className="login-right">
             <div className="login-card">
               <div className="login-card-eyebrow">PL Offshore | Reparaciones</div>
@@ -1099,9 +1147,10 @@ function LoginScreen() {
   );
 }
 
-// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+//  ROOT APP 
 export default function App() {
   const [session, setSession] = useState(undefined);
+  const [navOpen, setNavOpen] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [barcosPermitidos, setBarcosPermitidos] = useState(BARCOS);
   const [barco, setBarco] = useState("Golondrina de Mar");
@@ -1154,83 +1203,139 @@ export default function App() {
 
   if (!session) return <LoginScreen />;
 
+  const Ico = ({ d, size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+  );
+  const ICONS = {
+    ship:  <><path d="M4 17l1.6-5.4h12.8L20 17a10 10 0 0 1-16 0z" /><path d="M12 11.6V5.5M8.5 5.5h7" /></>,
+    plus:  <path d="M12 5v14M5 12h14" />,
+    grid:  <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18M15 3v18" /></>,
+    panel: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9.5 4v16" /></>,
+    bell:  <><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>,
+    help:  <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.1 1-1.1 1.7v.3" /><path d="M12 17.5h.01" /></>,
+    back:  <><path d="M19 12H5" /><path d="M11 6l-6 6 6 6" /></>,
+    power: <><path d="M12 4v7" /><path d="M7.4 6.6a7 7 0 1 0 9.2 0" /></>,
+  };
+
+  const inicial = (userEmail || "U").replace(/@.*$/, "").slice(0, 2).toUpperCase();
+
   return (
     <>
       <style>{CSS}</style>
-      <div className="app">
 
-        {/* ── SIDEBAR [DS-3.2] — solo desktop ── */}
+      <header className="appbar">
+        <img src="/integra-isotipo-white.svg" alt="INTEGRA" className="appbar-iso" />
+        <span className="appbar-div" />
+        <span className="appbar-instance">PL Offshore</span>
+        <input className="appbar-search" type="search" disabled placeholder="Buscar en todo INTEGRA" aria-label="Buscar" />
+        <div className="appbar-tools">
+          <span style={{ color: "rgba(255,255,255,.86)", display: "block" }}><Ico d={ICONS.bell} /></span>
+          <span style={{ color: "rgba(255,255,255,.86)", display: "block" }}><Ico d={ICONS.help} /></span>
+          <span className="appbar-div" />
+          <span className="appbar-avatar">{inicial}</span>
+          <span className="appbar-user">{userEmail || "Usuario"}</span>
+          <button className="appbar-link" onClick={handleLogout}>Cerrar sesión</button>
+        </div>
+      </header>
+
+      <div className={`shell ${navOpen ? "" : "is-collapsed"}`}>
         <nav className="sidebar">
           <div className="sidebar-header">
-            <div className="sidebar-logo-wrap">
-              <img src="/PL.png" alt="PL Offshore" className="sidebar-logo-img" onError={e => { e.currentTarget.style.display = "none"; }} />
+            <img src="/PL.png" alt="PL Offshore" className="sidebar-logo-img" onError={e => { e.currentTarget.style.display = "none"; }} />
+            {navOpen && (
               <div>
                 <div className="sidebar-logo-main">Reparaciones</div>
                 <div className="sidebar-logo-sub">PL Offshore</div>
               </div>
+            )}
+          </div>
+
+          <div className="sidebar-nav">
+            <div style={{ marginBottom: 8 }}>
+              {navOpen && <div className="nav-section">Barcos</div>}
+              {barcosPermitidos.map(b => (
+                <button
+                  key={b}
+                  className={`ni ${barco === b ? "active" : ""}`}
+                  onClick={() => barcosPermitidos.length > 1 && setBarco(b)}
+                  title={b}
+                >
+                  <span className="ni-ico"><Ico d={ICONS.ship} /></span>
+                  {navOpen && <span className="ni-label">{b}</span>}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              {navOpen && <div className="nav-section">Acciones</div>}
+              <button className="ni" onClick={() => setNuevaModal(true)} title="Nueva solicitud">
+                <span className="ni-ico"><Ico d={ICONS.plus} /></span>
+                {navOpen && <span className="ni-label">Nueva solicitud</span>}
+              </button>
+              <button className="ni active" title="Panel de control">
+                <span className="ni-ico"><Ico d={ICONS.grid} /></span>
+                {navOpen && <span className="ni-label">Panel de control</span>}
+              </button>
             </div>
           </div>
-          <div className="nav-section">Barcos</div>
-          {barcosPermitidos.map(b => (
-            <div key={b} className={`ni ${barco === b ? "active" : ""}`} onClick={() => barcosPermitidos.length > 1 && setBarco(b)}>
-              <span className="ni-icon">🚢</span><span style={{ fontSize: 11 }}>{b}</span>
-            </div>
-          ))}
-          <div className="nav-section">Acciones</div>
-          <div className="ni nueva" onClick={() => setNuevaModal(true)}><span className="ni-icon">+</span><span>Nueva SSRR</span></div>
-          <div className="ni active"><span className="ni-icon">▦</span><span>Panel de control</span></div>
-          <div style={{ flex: 1 }} />
-          <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,.1)" }}>
-            {/* [DS-8.1] Volver al portal con PORTAL_URL */}
-            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none" }} onClick={() => window.open(ERP_URL, "_self")}>
-              <span className="ni-icon" style={{ fontSize: 11 }}>←</span><span style={{ fontSize: 11 }}>Volver al ERP</span>
-            </div>
-            <div className="ni erp" style={{ padding: "6px 0", borderLeft: "none", marginTop: 4 }} onClick={handleLogout}>
-              <span className="ni-icon" style={{ fontSize: 11 }}>⏻</span><span style={{ fontSize: 11 }}>Cerrar sesión</span>
-            </div>
-            {/* [DS-3.2][DS-9.1-B] versión DM Mono 9px */}
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,.25)", fontFamily: "var(--mono)", letterSpacing: 1, marginTop: 8 }}>SSRR v1.5</div>
+
+          <div className="sidebar-foot">
+            <button className="sidebar-foot-btn" onClick={() => setNavOpen(v => !v)}>
+              <span style={{ display: "block", color: "var(--muted2)" }}><Ico d={ICONS.panel} size={16} /></span>
+              {navOpen && <span style={{ flex: 1, textAlign: "left" }}>Colapsar menú</span>}
+            </button>
+            {navOpen && (
+              <div className="sidebar-foot-meta">
+                <div>SSRR v1.5</div>
+                <div>POWERED BY INTEGRA</div>
+              </div>
+            )}
           </div>
         </nav>
 
-        {/* ── MAIN ── */}
         <div className="main">
-          <div className="topbar">
-            <div className="topbar-title">{barco} — Panel de control</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {/* [DS-3.3] avatar circular 28×28 fondo #DBEAFE */}
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#DBEAFE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "var(--blue)", fontWeight: 700 }}>
-                {userEmail ? userEmail[0].toUpperCase() : "U"}
+          <div className="pagehead">
+            <div className="crumb">
+              <button onClick={() => window.open(ERP_URL, "_self")}>Portal</button>
+              <span>/</span>
+              <span className="crumb-current">Solicitudes de reparación</span>
+            </div>
+            <div className="pagehead-row">
+              <div>
+                <h1>{barco}</h1>
+                <p>Solicitudes de reparación del barco, con estado, criticidad y responsable técnico.</p>
               </div>
-              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>{userEmail || "Usuario"}</span>
+              <div className="pagehead-actions">
+                <button className="btn btn-primary" onClick={() => setNuevaModal(true)}>Nueva solicitud</button>
+              </div>
             </div>
           </div>
+
           <div className="content">
             <PagePanel key={`${barco}-${refreshKey}`} barco={barco} notify={notify} esBarco={esBarco} />
           </div>
         </div>
       </div>
 
-      {/* ── MOBILE NAV [DS-4.10] ── */}
       <nav className="mobile-nav">
-        <button className={`mn-item ${page === "panel" ? "active" : ""}`} onClick={() => setPage("panel")}>
-          <span className="mn-icon">▦</span>
-          <span className="mn-label">Panel</span>
-        </button>
-        <button className="mn-item" onClick={() => setNuevaModal(true)}>
-          <span className="mn-icon">+</span>
-          <span className="mn-label">Nueva</span>
-        </button>
+        <div className={`mobile-nav-item ${page === "panel" ? "active" : ""}`} onClick={() => setPage("panel")}>
+          <span className="mobile-nav-icon"><Ico d={ICONS.grid} size={18} /></span>
+          <span className="mobile-nav-label">Panel</span>
+        </div>
+        <div className="mobile-nav-item" onClick={() => setNuevaModal(true)}>
+          <span className="mobile-nav-icon"><Ico d={ICONS.plus} size={18} /></span>
+          <span className="mobile-nav-label">Nueva</span>
+        </div>
         {barcosPermitidos.length > 1 && barcosPermitidos.map(b => (
-          <button key={b} className={`mn-item ${barco === b ? "active" : ""}`} onClick={() => setBarco(b)}>
-            <span className="mn-icon">🚢</span>
-            <span className="mn-label">{b.split(" ")[0]}</span>
-          </button>
+          <div key={b} className={`mobile-nav-item ${barco === b ? "active" : ""}`} onClick={() => setBarco(b)}>
+            <span className="mobile-nav-icon"><Ico d={ICONS.ship} size={18} /></span>
+            <span className="mobile-nav-label">{b.split(" ")[0]}</span>
+          </div>
         ))}
-        <button className="mn-item" onClick={() => window.open(ERP_URL, "_self")}>
-          <span className="mn-icon">←</span>
-          <span className="mn-label">Portal</span>
-        </button>
+        <div className="mobile-nav-item" onClick={() => window.open(ERP_URL, "_self")}>
+          <span className="mobile-nav-icon"><Ico d={ICONS.back} size={18} /></span>
+          <span className="mobile-nav-label">Portal</span>
+        </div>
       </nav>
 
       {nuevaModal && (
