@@ -80,13 +80,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;cursor:pointer}
 .filter-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;min-width:200px}
-.ssrr-card{background:var(--surface);border:2px solid var(--navy);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.ssrr-hdr{padding:14px 18px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:12px}
-.ssrr-num{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;transition:var(--tr)}
-.ssrr-hdr-main:hover .ssrr-num{color:#7EB8E8;text-decoration:underline}
-.ssrr-meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:5px;font-family:var(--mono)}
-.ssrr-expand{padding:4px 8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);cursor:pointer;color:#fff;font-size:12px;flex-shrink:0;border-radius:var(--r);transition:var(--tr)}
-.ssrr-expand:hover{background:rgba(255,255,255,.22)}
+.ssrr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(33,51,99,.05)}
+.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.ssrr-hdr:hover{background:#EEF2F7}
+.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)}
+.ssrr-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .items-table{width:100%;border-collapse:collapse}
 .items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
 .items-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
@@ -219,13 +217,13 @@ function ItemModal({ item, onClose, onSave }) {
 function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   const [form, setForm] = useState({
     barco: barcoDefault || "Golondrina de Mar",
-    numero: "", fecha_emision: today(), emitido_por: "", observaciones_generales: "",
+    numero: "", fecha_emision: today(), emitido_por: "",
   });
-  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "" }]);
+  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "", archivo: null }]);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "" }]);
+  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "", archivo: null }]);
   const removeItem = (id) => setItems(prev => prev.filter(it => it.id !== id));
   const updateItem = (id, k, v) => setItems(prev => prev.map(it => it.id === id ? { ...it, [k]: v } : it));
 
@@ -237,13 +235,19 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
     setSaving(true);
     try {
       const sol = await api.crearSolicitud({ ...form, status: "abierta" });
-      await api.crearItems(itemsValidos.map((it, i) => ({
-        solicitud_id: sol.id,
-        numero_item: `${form.numero}-${i + 1}`,
-        descripcion: it.descripcion,
-        obs_capitan: it.obs_capitan || null,
-        estado: "pendiente",
-      })));
+      const itemsCreados = await Promise.all(itemsValidos.map(async (it, i) => {
+        let adjunto_url = null;
+        if (it.archivo) adjunto_url = await api.subirAdjunto(`new_${sol.id}_${i}`, it.archivo);
+        return {
+          solicitud_id: sol.id,
+          numero_item: `${form.numero}-${i + 1}`,
+          descripcion: it.descripcion,
+          obs_capitan: it.obs_capitan || null,
+          estado: "pendiente",
+          adjunto_url,
+        };
+      }));
+      await api.crearItems(itemsCreados);
       notify("SSRR creada correctamente", "success");
       onSave();
     } catch (e) { alert("Error: " + e.message); }
@@ -253,9 +257,9 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-xl">
-        <div className="mhdr">
-          <div className="mtitle">Nueva Solicitud de Reparación</div>
-          <button className="mclose" onClick={onClose}>✕</button>
+        <div className="mhdr" style={{ background: "var(--navy)", borderRadius: "var(--r) var(--r) 0 0" }}>
+          <div className="mtitle" style={{ color: "#fff" }}>Nueva Solicitud de Reparación</div>
+          <button className="mclose" style={{ color: "rgba(255,255,255,.7)" }} onClick={onClose}>✕</button>
         </div>
         <div className="mbody">
           <div className="form-section">Datos de la solicitud</div>
@@ -265,8 +269,8 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 {BARCOS.map(b => <option key={b}>{b}</option>)}
               </select>
             </FG>
-            <FG label="N° de solicitud *" hint="Ej: 06-2025">
-              <input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 06-2025" />
+            <FG label="N° de solicitud *" hint="Ej: 7/26">
+              <input value={form.numero} onChange={e => set("numero", e.target.value)} placeholder="Ej: 7/26" />
             </FG>
             <FG label="Fecha de emisión *">
               <input type="date" value={form.fecha_emision} onChange={e => set("fecha_emision", e.target.value)} />
@@ -275,19 +279,16 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
           <FG label="Emitido por (JDM / Capitán) *">
             <input value={form.emitido_por} onChange={e => set("emitido_por", e.target.value)} placeholder="Nombre del responsable" />
           </FG>
-          <FG label="Observaciones generales" full>
-            <textarea value={form.observaciones_generales} onChange={e => set("observaciones_generales", e.target.value)} placeholder="Observaciones generales..." style={{ marginTop: 8 }} />
-          </FG>
 
           <div className="form-section">Ítems a reparar</div>
-          <div className="info-box accent mb12">
-            Agregá cada punto de reparación. El número de ítem se asigna automáticamente.
+          <div style={{ background: "var(--navy)", color: "#fff", borderRadius: "var(--r)", padding: "10px 14px", marginBottom: 12, fontSize: 13, fontWeight: 500 }}>
+            ℹ️ Agregá cada punto de reparación. El número de ítem se asigna automáticamente.
           </div>
 
           {items.map((it, i) => (
-            <div key={it.id} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "12px 14px", marginBottom: 8 }}>
+            <div key={it.id} style={{ background: "var(--surface2)", border: "2px solid var(--navy)", borderRadius: "var(--r)", padding: "14px 16px", marginBottom: 10 }}>
               <div className="flex-between mb8">
-                <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", fontWeight: 600 }}>{form.numero || "XX"}-{i + 1}</span>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--navy)", fontWeight: 700 }}>{form.numero || "XX"}-{i + 1}</span>
                 {items.length > 1 && <button className="btn btn-ghost btn-sm" onClick={() => removeItem(it.id)} style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>✕</button>}
               </div>
               <div className="form-grid">
@@ -297,10 +298,25 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
                 <FG label="Observaciones del JDM/Capitán" full>
                   <input value={it.obs_capitan || ""} onChange={e => updateItem(it.id, "obs_capitan", e.target.value)} placeholder="Observaciones opcionales..." />
                 </FG>
+                <FG label="Adjunto (foto, documento)" full>
+                  <div className="flex-gap">
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 36, padding: "0 14px", borderRadius: "var(--r)", border: "1px solid var(--border2)", background: "var(--surface)", cursor: "pointer", fontSize: 14, color: "var(--muted)", fontFamily: "var(--sans)", fontWeight: 500 }}>
+                      📎 {it.archivo ? it.archivo.name : "Seleccionar archivo"}
+                      <input type="file" style={{ display: "none" }} onChange={e => updateItem(it.id, "archivo", e.target.files[0] || null)} />
+                    </label>
+                    {it.archivo && <button onClick={() => updateItem(it.id, "archivo", null)} style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 16 }}>✕</button>}
+                  </div>
+                </FG>
               </div>
             </div>
           ))}
-          <button className="btn btn-ghost btn-sm mt8" onClick={addItem}>+ Agregar ítem</button>
+          <button
+            className="btn btn-primary mt8"
+            onClick={addItem}
+            style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
+          >
+            + Agregar ítem
+          </button>
         </div>
         <div className="mftr">
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
@@ -313,13 +329,7 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
 
 function SolicitudCard({ sol, onItemClick }) {
   const [expanded, setExpanded] = useState(true);
-  const items = [...(sol.ssrr_items || [])].sort((a, b) => {
-    const partsA = (a.numero_item || "").split("-");
-    const partsB = (b.numero_item || "").split("-");
-    const nA = parseInt(partsA[partsA.length - 1]) || 0;
-    const nB = parseInt(partsB[partsB.length - 1]) || 0;
-    return nA - nB;
-  });
+  const items = sol.ssrr_items || [];
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
 
@@ -329,13 +339,13 @@ function SolicitudCard({ sol, onItemClick }) {
         <div>
           <div className="flex-gap">
             <span className="ssrr-num">SSRR N° {sol.numero}</span>
-            {pendientes > 0 && <span className="badge" style={{background:"rgba(255,255,255,.15)",color:"#FFD580",border:"1px solid rgba(255,213,128,.4)"}}>{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
-            {enProceso > 0 && <span className="badge" style={{background:"rgba(255,255,255,.15)",color:"#7EB8E8",border:"1px solid rgba(126,184,232,.4)"}}>{enProceso} en proceso</span>}
+            {pendientes > 0 && <span className="badge b-amber">{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
+            {enProceso > 0 && <span className="badge b-blue">{enProceso} en proceso</span>}
           </div>
           <div className="ssrr-meta">Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por} · {sol.barco}</div>
         </div>
         <div className="flex-gap">
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,.7)", fontFamily: "var(--mono)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+          <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
           <span style={{ fontSize: 14, color: "var(--muted)" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -363,14 +373,13 @@ function SolicitudCard({ sol, onItemClick }) {
                     <td className="item-num-cell">{it.numero_item}</td>
                     <td className="item-desc-cell">{it.descripcion}</td>
                     <td><BadgeEstado estado={it.estado} /></td>
-                    <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
+                    <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
+                    <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)" }}>
                       {it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}
                     </td>
+                    <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td className="item-remito">{it.nro_remito || "—"}</td>
-                    <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
-                    <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
-                    <td>—</td>
                   </tr>
                 ))
               }
