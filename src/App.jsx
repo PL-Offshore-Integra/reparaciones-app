@@ -80,11 +80,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;cursor:pointer}
 .filter-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;min-width:200px}
-.ssrr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(33,51,99,.05)}
-.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.ssrr-hdr:hover{background:#EEF2F7}
-.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)}
-.ssrr-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.ssrr-card{background:var(--surface);border:2px solid var(--navy);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
+.ssrr-hdr{padding:14px 18px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ssrr-num{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;transition:var(--tr)}
+.ssrr-hdr-main:hover .ssrr-num{color:#7EB8E8;text-decoration:underline}
+.ssrr-meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:5px;font-family:var(--mono)}
+.ssrr-expand{padding:4px 8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);cursor:pointer;color:#fff;font-size:12px;flex-shrink:0;border-radius:var(--r);transition:var(--tr)}
+.ssrr-expand:hover{background:rgba(255,255,255,.22)}
 .items-table{width:100%;border-collapse:collapse}
 .items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
 .items-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
@@ -311,7 +313,13 @@ function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
 
 function SolicitudCard({ sol, onItemClick }) {
   const [expanded, setExpanded] = useState(true);
-  const items = sol.ssrr_items || [];
+  const items = [...(sol.ssrr_items || [])].sort((a, b) => {
+    const partsA = (a.numero_item || "").split("-");
+    const partsB = (b.numero_item || "").split("-");
+    const nA = parseInt(partsA[partsA.length - 1]) || 0;
+    const nB = parseInt(partsB[partsB.length - 1]) || 0;
+    return nA - nB;
+  });
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
 
@@ -321,13 +329,13 @@ function SolicitudCard({ sol, onItemClick }) {
         <div>
           <div className="flex-gap">
             <span className="ssrr-num">SSRR N° {sol.numero}</span>
-            {pendientes > 0 && <span className="badge b-amber">{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
-            {enProceso > 0 && <span className="badge b-blue">{enProceso} en proceso</span>}
+            {pendientes > 0 && <span className="badge" style={{background:"rgba(255,255,255,.15)",color:"#FFD580",border:"1px solid rgba(255,213,128,.4)"}}>{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
+            {enProceso > 0 && <span className="badge" style={{background:"rgba(255,255,255,.15)",color:"#7EB8E8",border:"1px solid rgba(126,184,232,.4)"}}>{enProceso} en proceso</span>}
           </div>
           <div className="ssrr-meta">Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por} · {sol.barco}</div>
         </div>
         <div className="flex-gap">
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,.7)", fontFamily: "var(--mono)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
           <span style={{ fontSize: 14, color: "var(--muted)" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -355,13 +363,14 @@ function SolicitudCard({ sol, onItemClick }) {
                     <td className="item-num-cell">{it.numero_item}</td>
                     <td className="item-desc-cell">{it.descripcion}</td>
                     <td><BadgeEstado estado={it.estado} /></td>
-                    <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
-                    <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
+                    <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)" }}>
                       {it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}
                     </td>
-                    <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td className="item-remito">{it.nro_remito || "—"}</td>
+                    <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
+                    <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>
+                    <td>—</td>
                   </tr>
                 ))
               }
@@ -407,34 +416,14 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
     return true;
   });
 
-  const handleStatClick = (estado) => {
-    setFiltroEstado(prev => prev === estado ? "" : estado);
-    setBusqueda("");
-  };
-
   return (
     <div>
       <div className="stats">
-        <div className="stat" style={{ background: "#EEF4FB", borderColor: "#C5D8EE", cursor: "pointer" }} onClick={() => { setFiltroEstado(""); setBusqueda(""); }} title="Mostrar todos">
-          <div className="stat-label">Total ítems</div>
-          <div className="stat-value" style={{ color: "var(--blue)" }}>{counts.total}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("pendiente")} title="Filtrar pendientes" style={{ background: filtroEstado === "pendiente" ? "#F5E6D0" : "#FBF1E3", borderColor: filtroEstado === "pendiente" ? "#D4943A" : "#EDD5AA", cursor: "pointer", outline: filtroEstado === "pendiente" ? "2px solid var(--warn)" : "none" }}>
-          <div className="stat-label">Pendientes</div>
-          <div className="stat-value" style={{ color: "var(--warn)" }}>{counts.pendiente}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("en_proceso")} title="Filtrar en proceso" style={{ background: filtroEstado === "en_proceso" ? "#D0E8EB" : "#E6F1F2", borderColor: filtroEstado === "en_proceso" ? "#2A8A95" : "#A8D4D8", cursor: "pointer", outline: filtroEstado === "en_proceso" ? "2px solid var(--blue)" : "none" }}>
-          <div className="stat-label">En proceso</div>
-          <div className="stat-value" style={{ color: "var(--blue)" }}>{counts.en_proceso}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("cumplido")} title="Filtrar cumplidos" style={{ background: filtroEstado === "cumplido" ? "#C8E8DC" : "#E8F3EF", borderColor: filtroEstado === "cumplido" ? "#1A9E70" : "#A0D4C0", cursor: "pointer", outline: filtroEstado === "cumplido" ? "2px solid var(--accent2)" : "none" }}>
-          <div className="stat-label">Cumplidos</div>
-          <div className="stat-value" style={{ color: "var(--accent2)" }}>{counts.cumplido}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("anulado")} title="Filtrar anulados" style={{ background: filtroEstado === "anulado" ? "#DCE0E4" : "#F4F6F8", borderColor: filtroEstado === "anulado" ? "#7A8792" : "#C9D0D6", cursor: "pointer", outline: filtroEstado === "anulado" ? "2px solid var(--muted)" : "none" }}>
-          <div className="stat-label">Anulados</div>
-          <div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div>
-        </div>
+        <div className="stat"><div className="stat-label">Total ítems</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.total}</div></div>
+        <div className="stat"><div className="stat-label">Pendientes</div><div className="stat-value" style={{ color: "var(--warn)" }}>{counts.pendiente}</div></div>
+        <div className="stat"><div className="stat-label">En proceso</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.en_proceso}</div></div>
+        <div className="stat"><div className="stat-label">Cumplidos</div><div className="stat-value" style={{ color: "var(--accent2)" }}>{counts.cumplido}</div></div>
+        <div className="stat"><div className="stat-label">Anulados</div><div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div></div>
       </div>
 
       <div className="filter-row">
