@@ -17,8 +17,8 @@ const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
 
 const BARCO_POR_EMAIL = {
-  "golondrinademar@paranalogistica.com.ar": "Golondrina de Mar",
-  "atlanticdama@paranalogistica.com.ar": "Atlantic Dama",
+  "golondrinademar@ploffshore.com": "Golondrina de Mar",
+  "atlanticdama@ploffshore.com": "Atlantic Dama",
 };
 
 const CSS = `
