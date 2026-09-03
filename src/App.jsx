@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./lib/supabase";
 
 const BARCOS = ["Golondrina de Mar", "Atlantic Dama"];
@@ -10,7 +10,19 @@ const ESTADOS = {
   anulado: { label: "Anulado", short: "A", color: "b-gray" },
 };
 const TIPO_REALIZACION = ["Taller externo", "Personal propio", "JDM", "Capitán", "Otro"];
+const AREAS = ["Cubierta", "Máquinas"];
+const TIPOS_REPARACION = ["Correctiva", "Preventiva"];
+const SISTEMAS = [
+  "Motores principales","Generadores","Equipos auxiliares","Electricidad",
+  "Casco","Cañerías","Equipos de radio","Propulsión y gobierno",
+];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
+const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
+const BARCO_POR_EMAIL = {
+  "golondrinademar@ploffshore.com": "Golondrina de Mar",
+  "atlanticdama@ploffshore.com": "Atlantic Dama",
+};
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -80,21 +92,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;cursor:pointer}
 .filter-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:11px;padding:6px 10px;outline:none;min-width:200px}
-.ssrr-card{background:var(--surface);border:2px solid var(--navy);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.ssrr-hdr{padding:14px 18px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:12px}
-.ssrr-hdr-main{flex:1;cursor:pointer;min-width:0}
-.ssrr-hdr-main:hover .ssrr-num{color:#7EB8E8;text-decoration:underline}
-.ssrr-num{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;transition:all .12s}
-.ssrr-meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:5px;font-family:var(--mono)}
-.ssrr-expand{padding:4px 8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);cursor:pointer;color:#fff;font-size:12px;flex-shrink:0;border-radius:var(--r)}
-.ssrr-expand:hover{background:rgba(255,255,255,.22)}
+.ssrr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(33,51,99,.05)}
+.ssrr-hdr{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.ssrr-hdr:hover{background:#EEF2F7}
+.ssrr-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)}
+.ssrr-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .items-table{width:100%;border-collapse:collapse}
 .items-table th{font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
 .items-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:11px}
 .items-table tr:last-child td{border-bottom:none}
 .items-table tr:hover td{background:var(--surface2);cursor:pointer}
 .item-num-cell{font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap}
-.item-desc-cell{font-size:12px;color:var(--text);text-align:left}
+.item-desc-cell{font-size:12px;color:var(--text);max-width:240px}
 .item-obs-cell{font-size:10px;color:var(--muted);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .item-remito{font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:600}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px}
@@ -108,7 +117,47 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .flex-gap{display:flex;gap:8px;align-items:center}
 .flex-between{display:flex;justify-content:space-between;align-items:center}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
-.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.toggle-group{display:flex;gap:8px;flex-wrap:wrap}
+.toggle-btn{flex:1;padding:8px 12px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;letter-spacing:.5px;min-width:fit-content}
+.toggle-btn:hover{border-color:var(--blue);color:var(--blue)}
+.toggle-btn.selected{border-color:var(--blue);background:var(--blue);color:#fff}
+.toggle-btn.selected.correctiva{border-color:var(--danger);background:var(--danger)}
+.toggle-btn.selected.preventiva{border-color:var(--accent2);background:var(--accent2)}
+.toggle-btn.selected.cubierta{border-color:#0E7490;background:#0E7490}
+.toggle-btn.selected.maquinas{border-color:#4A5560;background:#4A5560}
+.adjunto-link{font-size:11px;color:var(--blue);text-decoration:none;font-family:var(--mono);display:inline-flex;align-items:center;gap:3px}
+.adjunto-link:hover{text-decoration:underline}
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px}
+.item-card-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.item-card-num{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0;background:var(--surface2);padding:3px 8px;border-radius:3px;border:1px solid var(--border)}
+.item-card-desc{font-size:13px;color:var(--navy);font-weight:600;flex:1;min-width:0}
+.item-card-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto}
+.item-card-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.item-card-field{display:flex;flex-direction:column;gap:3px}
+.item-card-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase}
+.item-card-value{font-size:12px;color:var(--text)}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;background:var(--surface2);border-radius:var(--r);padding:16px;border:1px solid var(--border)}
+.detail-field{display:flex;flex-direction:column;gap:4px}
+.detail-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+.detail-value{font-size:13px;color:var(--navy);font-weight:600}
+.cumplir-btn{background:var(--surface);border:1px solid var(--accent2);border-radius:var(--r);padding:4px 10px;cursor:pointer;color:var(--accent2);font-size:11px;font-weight:700;font-family:var(--sans);text-transform:uppercase;letter-spacing:.5px;transition:all .15s;height:28px}
+.cumplir-btn:hover{background:var(--accent2);color:#fff}
+.cumplir-btn:disabled{opacity:.4;cursor:not-allowed}
+.clip-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--muted);font-size:14px;transition:all .15s;display:inline-flex;align-items:center;height:28px}
+.clip-btn:hover{border-color:var(--blue);color:var(--blue)}
+.clip-btn.has-file{border-color:var(--accent2);color:var(--accent2)}
+.btn-success{background:var(--accent2);color:#fff}.btn-success:hover{background:#155A34}
+.b-teal{background:#CCFBF1;color:#065F46;border:1px solid #99F6E4}
+.sidebar-foot{border-top:1px solid rgba(255,255,255,.1);padding:10px 0}
+.sidebar-foot-btn{display:flex;align-items:center;gap:9px;width:100%;padding:7px 18px;background:none;border:none;cursor:pointer;font:500 12px/1.3 var(--sans);color:rgba(255,255,255,.55);transition:all .12s;text-align:left}
+.sidebar-foot-btn:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sidebar-foot-btn.danger:hover{color:#FFB3AE;background:rgba(192,57,43,.15)}
+.sidebar-foot-meta{padding:8px 18px 4px;font-family:var(--mono);font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.2)}
+.modal-xxl{max-width:1100px}
+.stat{cursor:pointer}
+.ni{background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left}
 `;
 
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
@@ -135,7 +184,46 @@ const api = {
     const { error } = await supabase.from("ssrr_items").update({ ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) throw error;
   },
+  async eliminarItem(id) {
+    const { error } = await supabase.from("ssrr_items").delete().eq("id", id);
+    if (error) throw error;
+  },
+  async eliminarSolicitud(id) {
+    const { error: e1 } = await supabase.from("ssrr_items").delete().eq("solicitud_id", id);
+    if (e1) throw e1;
+    const { error: e2 } = await supabase.from("ssrr_solicitudes").delete().eq("id", id);
+    if (e2) throw e2;
+  },
+  async subirAdjunto(itemId, file) {
+    const ext = file.name.split(".").pop();
+    const path = `${itemId}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("remitos").upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data } = supabase.storage.from("remitos").getPublicUrl(path);
+    return data.publicUrl;
+  },
+  async enviarNotificacion(payload) {
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/enviar_notificacion_SSRR`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify(payload),
+      });
+    } catch(e) { console.error("Error notificación:", e); }
+  },
 };
+
+
+const ordenarSolicitudes = (sols) => [...sols].sort((a, b) => {
+  const p = n => { const pts = (n||"0/0").split("/"); return {num:parseInt(pts[0])||0,anio:parseInt(pts[1])||0}; };
+  const pa=p(a.numero),pb=p(b.numero);
+  if(pa.anio!==pb.anio) return pb.anio-pa.anio;
+  return pb.num-pa.num;
+});
+const ordenarItems = (items) => [...items].sort((a,b) => {
+  const n = s => { const pts=(s||"").split("-"); return parseInt(pts[pts.length-1])||0; };
+  return n(a.numero_item)-n(b.numero_item);
+});
 
 function Notif({ msg, onClose }) {
   if (!msg) return null;
@@ -156,7 +244,179 @@ function BadgeEstado({ estado }) {
   return <span className={`badge ${e.color}`}>{e.label}</span>;
 }
 
-function ItemModal({ item, onClose, onSave }) {
+
+function BadgeArea({ area }) {
+  if (!area) return null;
+  return <span className={`badge ${area==="Cubierta"?"b-teal":"b-purple"}`}>{area}</span>;
+}
+function BadgeTipoRep({ tipo }) {
+  if (!tipo) return null;
+  return <span className={`badge ${tipo==="Correctiva"?"b-red":"b-green"}`}>{tipo}</span>;
+}
+function ToggleGroup({ label, options, value, onChange, colorClass }) {
+  return (
+    <div className="fg">
+      {label && <label>{label}</label>}
+      <div className="toggle-group">
+        {options.map(opt => (
+          <button key={opt} className={`toggle-btn ${value===opt?`selected ${colorClass?.[opt]||""}`:""}`} onClick={() => onChange(opt)} type="button">{opt}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ModalCumplir({ item, onClose, onSave, notify }) {
+  const [form, setForm] = useState({ realizado_por:"", fecha_realizacion:today(), nro_remito:"" });
+  const [archivo, setArchivo] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef();
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const handleSave = async () => {
+    if (!form.realizado_por.trim()) return alert("Ingresá quién realizó el trabajo");
+    setSaving(true);
+    try {
+      let adjunto_url = item.adjunto_url||null;
+      if (archivo) adjunto_url = await api.subirAdjunto(item.id, archivo);
+      await api.actualizarItem(item.id, {estado:"cumplido",realizado_por:form.realizado_por,fecha_realizacion:form.fecha_realizacion||null,nro_remito:form.nro_remito||null,adjunto_url});
+      notify("Ítem marcado como cumplido","success"); onSave();
+    } catch(err) { alert("Error: "+err.message); }
+    finally { setSaving(false); }
+  };
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()} style={{zIndex:200}}>
+      <div className="modal" style={{maxWidth:480}}>
+        <div className="mhdr" style={{background:"var(--navy)",borderRadius:"12px 12px 0 0"}}>
+          <div><div className="mtitle" style={{color:"#fff"}}>Marcar como Cumplido</div><div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:3}}>{item.numero_item} — {item.descripcion}</div></div>
+          <button className="mclose" style={{color:"rgba(255,255,255,.7)"}} onClick={onClose}>✕</button>
+        </div>
+        <div className="mbody">
+          <div className="fg mb12"><label>Realizado por *</label><input value={form.realizado_por} onChange={e=>set("realizado_por",e.target.value)} placeholder="Nombre / Empresa que realizó el trabajo" autoFocus /></div>
+          <div className="form-grid">
+            <div className="fg"><label>Fecha de realización</label><input type="date" value={form.fecha_realizacion} onChange={e=>set("fecha_realizacion",e.target.value)} /></div>
+            <div className="fg"><label>N° de Remito</label><input value={form.nro_remito} onChange={e=>set("nro_remito",e.target.value)} placeholder="Ej: 1-16190" /></div>
+          </div>
+          <div className="fg">
+            <label>Adjunto (remito, foto, etc.)</label>
+            <div className="flex-gap">
+              <button className="btn btn-ghost btn-sm" onClick={()=>fileRef.current.click()} type="button">📎 {archivo?archivo.name:"Seleccionar archivo"}</button>
+              {archivo && <button onClick={()=>setArchivo(null)} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:16}}>✕</button>}
+            </div>
+            <input ref={fileRef} type="file" style={{display:"none"}} onChange={e=>setArchivo(e.target.files[0]||null)} />
+          </div>
+        </div>
+        <div className="mftr">
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-success" onClick={handleSave} disabled={saving}>{saving?"Guardando...":"✓ Confirmar cumplimiento"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemAccionesBarco({ item, onUpdated, onEliminar, notify }) {
+  const [modalCumplir, setModalCumplir] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const fileRef = useRef();
+  const handleFileChange = async (e) => {
+    e.stopPropagation();
+    const file = e.target.files[0]; if (!file) return;
+    setLoading(true);
+    try { const url=await api.subirAdjunto(item.id,file); await api.actualizarItem(item.id,{adjunto_url:url}); notify("Adjunto subido","success"); onUpdated(); }
+    catch(err) { alert("Error: "+err.message); }
+    finally { setLoading(false); fileRef.current.value=""; }
+  };
+  const handleEliminar = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar el ítem ${item.numero_item}?\n\n"${item.descripcion}"\n\nEsta acción no se puede deshacer.`)) return;
+    setLoading(true);
+    try { await api.eliminarItem(item.id); notify("Ítem eliminado","warn"); onEliminar(); }
+    catch(err) { alert("Error: "+err.message); }
+    finally { setLoading(false); }
+  };
+  return (
+    <div className="item-card-actions" onClick={e=>e.stopPropagation()}>
+      {item.estado!=="cumplido"&&<button className="cumplir-btn" onClick={()=>setModalCumplir(true)} disabled={loading}>✓ Cumplido</button>}
+      <button className={`clip-btn ${item.adjunto_url?"has-file":""}`} onClick={()=>fileRef.current.click()} disabled={loading} title="Subir adjunto">📎</button>
+      <button className="clip-btn" onClick={handleEliminar} disabled={loading} title="Eliminar ítem" style={{color:"var(--danger)",borderColor:"var(--danger)"}}>🗑</button>
+      <input ref={fileRef} type="file" style={{display:"none"}} onChange={handleFileChange} />
+      {modalCumplir&&<ModalCumplir item={item} notify={notify} onClose={()=>setModalCumplir(false)} onSave={()=>{setModalCumplir(false);onUpdated();}} />}
+    </div>
+  );
+}
+
+function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
+  const [itemModal, setItemModal] = useState(null);
+  const [items, setItems] = useState(ordenarItems(sol.ssrr_items||[]));
+  const pendientes=items.filter(it=>it.estado==="pendiente").length;
+  const enProceso=items.filter(it=>it.estado==="en_proceso").length;
+  const cumplidos=items.filter(it=>it.estado==="cumplido").length;
+  const handleItemUpdated = async () => {
+    const {data} = await supabase.from("ssrr_items").select("*").eq("solicitud_id",sol.id);
+    if (data) setItems(ordenarItems(data));
+    onItemSaved();
+  };
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal modal-xxl">
+        <div className="mhdr" style={{background:"var(--navy)",borderRadius:"12px 12px 0 0"}}>
+          <div>
+            <div className="flex-gap mb8">
+              <div className="mtitle" style={{color:"#fff",fontSize:16}}>SSRR N° {sol.numero}</div>
+              {sol.area&&<BadgeArea area={sol.area} />}
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.7)",fontFamily:"var(--mono)"}}>{sol.barco} · Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por}</div>
+          </div>
+          <button className="mclose" style={{color:"rgba(255,255,255,.7)"}} onClick={onClose}>✕</button>
+        </div>
+        <div className="mbody">
+          <div className="detail-grid">
+            <div className="detail-field"><div className="detail-label">Barco</div><div className="detail-value">{sol.barco}</div></div>
+            <div className="detail-field"><div className="detail-label">Área</div><div className="detail-value">{sol.area?<BadgeArea area={sol.area}/>:"—"}</div></div>
+            <div className="detail-field"><div className="detail-label">N° Solicitud</div><div className="detail-value" style={{fontFamily:"var(--mono)"}}>{sol.numero}</div></div>
+            <div className="detail-field"><div className="detail-label">Fecha emisión</div><div className="detail-value">{fmtDate(sol.fecha_emision)}</div></div>
+            <div className="detail-field"><div className="detail-label">Emitido por</div><div className="detail-value">{sol.emitido_por}</div></div>
+            <div className="detail-field">
+              <div className="detail-label">Resumen</div>
+              <div className="flex-gap mt8">
+                {pendientes>0&&<span className="badge b-amber">{pendientes} pend.</span>}
+                {enProceso>0&&<span className="badge b-blue">{enProceso} en proc.</span>}
+                {cumplidos>0&&<span className="badge b-green">{cumplidos} cumpl.</span>}
+              </div>
+            </div>
+          </div>
+          <div className="form-section">Ítems de la solicitud</div>
+          {items.map(it=>(
+            <div key={it.id} className="item-card" style={{cursor:esBarco?"default":"pointer"}} onClick={!esBarco?()=>setItemModal(it):undefined}>
+              <div className="item-card-header">
+                <span className="item-card-num">{it.numero_item}</span>
+                <span className="item-card-desc">{it.descripcion}</span>
+                {it.sistema&&<span className="badge b-blue" style={{fontSize:9}}>{it.sistema}</span>}
+                {it.tipo_reparacion&&<BadgeTipoRep tipo={it.tipo_reparacion}/>}
+                <BadgeEstado estado={it.estado}/>
+                {esBarco&&<ItemAccionesBarco item={it} notify={notify} onUpdated={handleItemUpdated} onEliminar={handleItemUpdated}/>}
+              </div>
+              {(it.obs_capitan||it.obs_superintendente||it.realizado_por||it.nro_remito||it.adjunto_url)&&(
+                <div className="item-card-body">
+                  {it.obs_capitan&&<div className="item-card-field"><div className="item-card-label">Obs. CAP/JDM</div><div className="item-card-value">{it.obs_capitan}</div></div>}
+                  {it.obs_superintendente&&<div className="item-card-field"><div className="item-card-label">Obs. Super.</div><div className="item-card-value">{it.obs_superintendente}</div></div>}
+                  {it.realizado_por&&<div className="item-card-field"><div className="item-card-label">Realizado por</div><div className="item-card-value">{it.realizado_por}{it.tipo_realizacion?` (${it.tipo_realizacion})`:""}</div></div>}
+                  {it.fecha_realizacion&&<div className="item-card-field"><div className="item-card-label">Fecha realización</div><div className="item-card-value">{fmtDate(it.fecha_realizacion)}</div></div>}
+                  {it.nro_remito&&<div className="item-card-field"><div className="item-card-label">N° Remito</div><div className="item-card-value" style={{fontFamily:"var(--mono)",color:"var(--blue)"}}>{it.nro_remito}</div></div>}
+                  {it.adjunto_url&&<div className="item-card-field"><div className="item-card-label">Adjunto</div><a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e=>e.stopPropagation()}>📎 Ver archivo →</a></div>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mftr"><button className="btn btn-ghost" onClick={onClose}>Cerrar</button></div>
+      </div>
+      {itemModal&&<ItemModal item={itemModal} esBarco={esBarco} onClose={()=>setItemModal(null)} onSave={()=>{setItemModal(null);handleItemUpdated();}} notify={notify}/>}
+    </div>
+  );
+}
+
+function ItemModal({ item, onClose, onSave, esBarco }) {
   const [form, setForm] = useState({ ...item });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -180,11 +440,13 @@ function ItemModal({ item, onClose, onSave }) {
         </div>
         <div className="mbody">
           <div className="form-grid">
+            <FG label="Sistema"><select value={form.sistema||""} onChange={e=>set("sistema",e.target.value)}><option value="">— Sin especificar —</option>{SISTEMAS.map(s=><option key={s}>{s}</option>)}</select></FG>
             <FG label="Estado *">
-              <select value={form.estado} onChange={e => set("estado", e.target.value)}>
-                {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              {esBarco
+                ?<input value={ESTADOS[form.estado]?.label||form.estado} readOnly style={{background:"var(--surface2)"}}/>
+                :<select value={form.estado} onChange={e=>set("estado",e.target.value)}>{Object.entries(ESTADOS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>}
             </FG>
+            <ToggleGroup label="Tipo de reparación" options={TIPOS_REPARACION} value={form.tipo_reparacion||""} onChange={v=>set("tipo_reparacion",v)} colorClass={{Correctiva:"correctiva",Preventiva:"preventiva"}} />
             <FG label="Tipo de realización">
               <select value={form.tipo_realizacion || ""} onChange={e => set("tipo_realizacion", e.target.value)}>
                 <option value="">—</option>
@@ -204,9 +466,7 @@ function ItemModal({ item, onClose, onSave }) {
           <FG label="Observaciones del Capitán/JDM" full>
             <textarea value={form.obs_capitan || ""} onChange={e => set("obs_capitan", e.target.value)} placeholder="Comentarios del embarcado..." />
           </FG>
-          <FG label="Observaciones del Superintendente" full>
-            <textarea value={form.obs_superintendente || ""} onChange={e => set("obs_superintendente", e.target.value)} placeholder="Comentarios del superintendente técnico..." />
-          </FG>
+          {!esBarco&&<FG label="Observaciones del Superintendente" full><textarea value={form.obs_superintendente||""} onChange={e=>set("obs_superintendente",e.target.value)} placeholder="Comentarios del superintendente técnico..."/></FG>}
         </div>
         <div className="mftr">
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
@@ -217,16 +477,16 @@ function ItemModal({ item, onClose, onSave }) {
   );
 }
 
-function NuevaSolicitudModal({ barcoDefault, barcosPermitidos, onClose, onSave, notify }) {
+function NuevaSolicitudModal({ barcoDefault, onClose, onSave, notify }) {
   const [form, setForm] = useState({
     barco: barcoDefault || "Golondrina de Mar",
     numero: "", fecha_emision: today(), emitido_por: "", observaciones_generales: "",
   });
-  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "" }]);
+  const [items, setItems] = useState([{ id: 1, descripcion: "", obs_capitan: "", tipo_reparacion: "", sistema: "", archivo: null }]);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "" }]);
+  const addItem = () => setItems(prev => [...prev, { id: Date.now(), descripcion: "", obs_capitan: "", tipo_reparacion: "", sistema: "", archivo: null }]);
   const removeItem = (id) => setItems(prev => prev.filter(it => it.id !== id));
   const updateItem = (id, k, v) => setItems(prev => prev.map(it => it.id === id ? { ...it, [k]: v } : it));
 
@@ -235,16 +495,18 @@ function NuevaSolicitudModal({ barcoDefault, barcosPermitidos, onClose, onSave, 
     if (!form.emitido_por.trim()) return alert("Ingresá quién emite la solicitud");
     const itemsValidos = items.filter(it => it.descripcion.trim());
     if (!itemsValidos.length) return alert("Agregá al menos un ítem con descripción");
+    const sinSistema = itemsValidos.find(it => !it.sistema);
+    if (sinSistema) return alert(`Seleccioná el sistema para el ítem "${sinSistema.descripcion}"`);
     setSaving(true);
     try {
       const sol = await api.crearSolicitud({ ...form, status: "abierta" });
-      await api.crearItems(itemsValidos.map((it, i) => ({
-        solicitud_id: sol.id,
-        numero_item: `${form.numero}-${i + 1}`,
-        descripcion: it.descripcion,
-        obs_capitan: it.obs_capitan || null,
-        estado: "pendiente",
-      })));
+      const itemsCreados = await Promise.all(itemsValidos.map(async (it, i) => {
+        let adjunto_url = null;
+        if (it.archivo) adjunto_url = await api.subirAdjunto(`new_${sol.id}_${i}`, it.archivo);
+        return { solicitud_id: sol.id, numero_item: `${form.numero}-${i + 1}`, descripcion: it.descripcion, obs_capitan: it.obs_capitan||null, tipo_reparacion: it.tipo_reparacion||null, sistema: it.sistema||null, estado: "pendiente", adjunto_url };
+      }));
+      await api.crearItems(itemsCreados);
+      await api.enviarNotificacion({ barco: form.barco, numero: form.numero, fecha: fmtDate(form.fecha_emision), emitido_por: form.emitido_por, items: itemsCreados });
       notify("SSRR creada correctamente", "success");
       onSave();
     } catch (e) { alert("Error: " + e.message); }
@@ -263,7 +525,7 @@ function NuevaSolicitudModal({ barcoDefault, barcosPermitidos, onClose, onSave, 
           <div className="form-grid-3">
             <FG label="Barco *">
               <select value={form.barco} onChange={e => set("barco", e.target.value)}>
-                {(barcosPermitidos || BARCOS).map(b => <option key={b}>{b}</option>)}
+                {BARCOS.map(b => <option key={b}>{b}</option>)}
               </select>
             </FG>
             <FG label="N° de solicitud *" hint="Ej: 06-2025">
@@ -312,38 +574,26 @@ function NuevaSolicitudModal({ barcoDefault, barcosPermitidos, onClose, onSave, 
   );
 }
 
-function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefresh }) {
-  const [expanded, setExpanded] = useState(false);
-  const [loadingDel, setLoadingDel] = useState(false);
-  const items = ordenarItems(sol.ssrr_items || []);
-
-  const handleEliminarSol = async (e) => {
-    e.stopPropagation();
-    if (!confirm(`¿Eliminar la SSRR N° ${sol.numero} completa?\n\nSe eliminarán todos sus ítems. Esta acción no se puede deshacer.`)) return;
-    setLoadingDel(true);
-    try { await api.eliminarSolicitud(sol.id); notify("Solicitud eliminada", "warn"); onRefresh(); }
-    catch (err) { alert("Error: " + err.message); }
-    finally { setLoadingDel(false); }
-  };
+function SolicitudCard({ sol, onItemClick }) {
+  const [expanded, setExpanded] = useState(true);
+  const items = sol.ssrr_items || [];
   const pendientes = items.filter(it => it.estado === "pendiente").length;
   const enProceso = items.filter(it => it.estado === "en_proceso").length;
 
   return (
     <div className="ssrr-card">
-      <div className="ssrr-hdr">
-        <div className="ssrr-hdr-main" onClick={() => onVerDetalle(sol)}>
+      <div className="ssrr-hdr" onClick={() => setExpanded(!expanded)}>
+        <div>
           <div className="flex-gap">
             <span className="ssrr-num">SSRR N° {sol.numero}</span>
-            {sol.area && <BadgeArea area={sol.area} />}
-            {pendientes > 0 && <span className="badge" style={{ background: "rgba(255,255,255,.15)", color: "#FFD580", border: "1px solid rgba(255,213,128,.4)" }}>{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
-            {enProceso > 0 && <span className="badge" style={{ background: "rgba(255,255,255,.15)", color: "#7EB8E8", border: "1px solid rgba(126,184,232,.4)" }}>{enProceso} en proceso</span>}
+            {pendientes > 0 && <span className="badge b-amber">{pendientes} pendiente{pendientes > 1 ? "s" : ""}</span>}
+            {enProceso > 0 && <span className="badge b-blue">{enProceso} en proceso</span>}
           </div>
           <div className="ssrr-meta">Emitida: {fmtDate(sol.fecha_emision)} · Por: {sol.emitido_por} · {sol.barco}</div>
         </div>
         <div className="flex-gap">
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,.7)", fontFamily: "var(--mono)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
-          {esBarco && <button className="ssrr-expand" onClick={handleEliminarSol} disabled={loadingDel} title="Eliminar solicitud" style={{ color: "#FFB3AE", borderColor: "rgba(255,179,174,.4)" }}>🗑</button>}
-          <button className="ssrr-expand" onClick={() => setExpanded(!expanded)}>{expanded ? "▲" : "▼"}</button>
+          <span style={{ fontSize: 10, color: "var(--muted)" }}>{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </div>
 
@@ -354,22 +604,19 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
               <tr>
                 <th style={{ width: 70 }}>N°</th>
                 <th>Descripción</th>
-                <th style={{ width: 120 }}>Sistema</th>
-                <th style={{ width: 100 }}>Estado</th>
-                <th style={{ width: 95 }}>Fecha real.</th>
-                <th style={{ width: 130 }}>Quién realizó</th>
+                <th style={{ width: 110 }}>Estado</th>
+                <th style={{ width: 130 }}>Obs. Capitán</th>
+                <th style={{ width: 150 }}>Obs. Superintendente</th>
+                <th style={{ width: 120 }}>Quién realizó</th>
+                <th style={{ width: 90 }}>Fecha real.</th>
                 <th style={{ width: 90 }}>N° Remito</th>
-                <th style={{ width: 110 }}>Obs. CAP/JDM</th>
-                {!esBarco && <th style={{ width: 120 }}>Obs. Super.</th>}
-                <th style={{ width: 80 }}>Adjunto</th>
-                {esBarco && <th style={{ width: 130 }}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {items.length === 0
                 ? <tr><td colSpan={8} style={{ textAlign: "center", padding: 20, color: "var(--muted2)" }}>Sin ítems</td></tr>
                 : items.map(it => (
-                  <tr key={it.id} onClick={!esBarco ? () => onItemClick(it) : undefined} style={{ cursor: esBarco ? "default" : "pointer" }}>
+                  <tr key={it.id} onClick={() => onItemClick(it)}>
                     <td className="item-num-cell">{it.numero_item}</td>
                     <td className="item-desc-cell">{it.descripcion}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)" }}>{it.sistema || "—"}</td>
@@ -377,10 +624,6 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
                     <td style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>{fmtDate(it.fecha_realizacion)}</td>
                     <td style={{ fontSize: 10, color: "var(--muted)" }}>{it.realizado_por ? `${it.realizado_por}${it.tipo_realizacion ? ` (${it.tipo_realizacion})` : ""}` : "—"}</td>
                     <td className="item-remito">{it.nro_remito || "—"}</td>
-                    <td className="item-obs-cell">{it.obs_capitan || "—"}</td>
-                    {!esBarco && <td className="item-obs-cell">{it.obs_superintendente || "—"}</td>}
-                    <td>{it.adjunto_url ? <a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e => e.stopPropagation()}>📎 Ver</a> : "—"}</td>
-                    {esBarco && <td onClick={e => e.stopPropagation()}><ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} onEliminar={onRefresh} /></td>}
                   </tr>
                 ))
               }
@@ -392,13 +635,12 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
   );
 }
 
-function PagePanel({ barco, onNuevaSolicitud, notify }) {
+function PagePanel({ barco, notify, esBarco }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [itemModal, setItemModal] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [solicitudModal, setSolicitudModal] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -417,33 +659,24 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
     anulado: todosItems.filter(it => it.estado === "anulado").length,
   };
 
-  const handleStatClick = (estado) => { setFiltroEstado(prev => prev === estado ? "" : estado); setBusqueda(""); };
-
-  const solFiltradas = solicitudes.map(sol => {
-    let items = ordenarItems(sol.ssrr_items || []);
-    if (filtroEstado) items = items.filter(it => it.estado === filtroEstado);
-    if (busqueda) { const q = busqueda.toLowerCase(); if (!sol.numero?.toLowerCase().includes(q)) items = items.filter(it => it.descripcion?.toLowerCase().includes(q)); }
-    return { ...sol, ssrr_items: items };
-  }).filter(sol => sol.ssrr_items.length > 0);
+  const solFiltradas = solicitudes.filter(sol => {
+    const items = sol.ssrr_items || [];
+    if (filtroEstado && !items.some(it => it.estado === filtroEstado)) return false;
+    if (busqueda) {
+      const q = busqueda.toLowerCase();
+      if (!items.some(it => it.descripcion?.toLowerCase().includes(q)) && !sol.numero?.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div>
       <div className="stats">
-        <div className="stat" style={{ background: "#EEF4FB", borderColor: "#C5D8EE", cursor:"pointer" }} onClick={() => { setFiltroEstado(""); setBusqueda(""); }}>
-          <div className="stat-label">Total ítems</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.total}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("pendiente")} style={{ background: filtroEstado==="pendiente"?"#F5E6D0":"#FEF3C7", borderColor: filtroEstado==="pendiente"?"#D4943A":"#FDE68A", cursor:"pointer", outline: filtroEstado==="pendiente"?"2px solid var(--warn)":"none" }}>
-          <div className="stat-label">Pendientes</div><div className="stat-value" style={{ color: "var(--warn)" }}>{counts.pendiente}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("en_proceso")} style={{ background: filtroEstado==="en_proceso"?"#DBEAFE":"#EFF6FF", borderColor: filtroEstado==="en_proceso"?"#3B82F6":"#BFDBFE", cursor:"pointer", outline: filtroEstado==="en_proceso"?"2px solid var(--blue)":"none" }}>
-          <div className="stat-label">En proceso</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.en_proceso}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("cumplido")} style={{ background: filtroEstado==="cumplido"?"#D1FAE5":"#ECFDF5", borderColor: filtroEstado==="cumplido"?"#10B981":"#A7F3D0", cursor:"pointer", outline: filtroEstado==="cumplido"?"2px solid var(--accent2)":"none" }}>
-          <div className="stat-label">Cumplidos</div><div className="stat-value" style={{ color: "var(--accent2)" }}>{counts.cumplido}</div>
-        </div>
-        <div className="stat" onClick={() => handleStatClick("anulado")} style={{ background: filtroEstado==="anulado"?"#E5E7EB":"#F9FAFB", borderColor: filtroEstado==="anulado"?"#9CA3AF":"#E5E7EB", cursor:"pointer", outline: filtroEstado==="anulado"?"2px solid var(--muted)":"none" }}>
-          <div className="stat-label">Anulados</div><div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div>
-        </div>
+        <div className="stat"><div className="stat-label">Total ítems</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.total}</div></div>
+        <div className="stat"><div className="stat-label">Pendientes</div><div className="stat-value" style={{ color: "var(--warn)" }}>{counts.pendiente}</div></div>
+        <div className="stat"><div className="stat-label">En proceso</div><div className="stat-value" style={{ color: "var(--blue)" }}>{counts.en_proceso}</div></div>
+        <div className="stat"><div className="stat-label">Cumplidos</div><div className="stat-value" style={{ color: "var(--accent2)" }}>{counts.cumplido}</div></div>
+        <div className="stat"><div className="stat-label">Anulados</div><div className="stat-value" style={{ color: "var(--muted)" }}>{counts.anulado}</div></div>
       </div>
 
       <div className="filter-row">
@@ -459,45 +692,18 @@ function PagePanel({ barco, onNuevaSolicitud, notify }) {
       {loading ? <div className="loading"><span className="spin">◌</span> Cargando...</div> :
         solFiltradas.length === 0 ? <div className="empty-state"><div style={{ fontSize: 28, marginBottom: 8 }}>🔧</div>Sin solicitudes registradas</div> :
         solFiltradas.map(sol => (
-          <SolicitudCard key={sol.id} sol={sol} onVerDetalle={setSolicitudModal} onItemClick={setItemModal} esBarco={esBarco} notify={notify} onRefresh={load} />
+          <SolicitudCard key={sol.id} sol={sol} onItemClick={setItemModal} />
         ))
       }
 
-      {itemModal && !esBarco && <ItemModal item={itemModal} esBarco={false} onClose={() => setItemModal(null)} onSave={() => { setItemModal(null); notify("Ítem actualizado", "success"); load(); }} notify={notify} />}
-      {solicitudModal && <SolicitudModal sol={solicitudModal} esBarco={esBarco} notify={notify} onClose={() => setSolicitudModal(null)} onItemSaved={() => { notify("Ítem actualizado", "success"); load(); setSolicitudModal(null); }} />}
+      {itemModal && (
+        <ItemModal
+          item={itemModal}
+          onClose={() => setItemModal(null)}
+          onSave={() => { setItemModal(null); notify("Ítem actualizado", "success"); load(); }}
+        />
+      )}
     </div>
-  );
-}
-
-function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) return setError("Completá usuario y contraseña");
-    setLoading(true); setError("");
-    const { error: e } = await supabase.auth.signInWithPassword({ email, password });
-    if (e) { setError("Usuario o contraseña incorrectos"); setLoading(false); }
-  };
-  const handleKey = e => { if (e.key === "Enter") handleLogin(); };
-  return (
-    <>
-      <style>{CSS}</style>
-      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"var(--navy)" }}>
-        <div style={{ background:"var(--surface)", borderRadius:12, padding:"40px 36px", width:"100%", maxWidth:420, boxShadow:"0 8px 32px rgba(33,51,99,.25)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:28 }}>
-            <div style={{ width:40, height:40, background:"var(--navy)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🔧</div>
-            <div><div style={{ fontWeight:700, fontSize:14, letterSpacing:1, color:"var(--navy)", textTransform:"uppercase" }}>Reparaciones</div><div style={{ fontSize:10, color:"var(--muted)", letterSpacing:.5 }}>PL Offshore · Terra Mare Group</div></div>
-          </div>
-          {error && <div style={{ background:"#FEE2E2", border:"1px solid #FECACA", borderLeft:"3px solid var(--danger)", borderRadius:"var(--r)", padding:"10px 14px", fontSize:13, color:"var(--danger)", marginBottom:16 }}>{error}</div>}
-          <div className="fg" style={{ marginBottom:14 }}><label>Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey} placeholder="correo@ploffshore.com" autoFocus /></div>
-          <div className="fg" style={{ marginBottom:24 }}><label>Contraseña</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey} placeholder="••••••••" /></div>
-          <button className="btn btn-primary" onClick={handleLogin} disabled={loading || !email || !password} style={{ width:"100%", justifyContent:"center", height:42, fontSize:13 }}>{loading ? "Ingresando..." : "Ingresar →"}</button>
-          <div style={{ fontFamily:"var(--mono)", fontSize:9, color:"var(--muted2)", marginTop:24, textAlign:"center", letterSpacing:1 }}>PL Offshore · Reparaciones · Confidencial</div>
-        </div>
-      </div>
-    </>
   );
 }
 
