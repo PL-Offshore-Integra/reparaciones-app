@@ -174,7 +174,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
 const fmtDate = d => d ? new Date(d + "T00:00:00").toLocaleDateString("es-AR") : "—";
 const today = () => new Date().toISOString().split("T")[0];
-const today = () => new Date().toISOString().split("T")[0];
 
 const ordenarSolicitudes = (sols) => [...sols].sort((a, b) => {
   const p = n => { const pts = (n || "0/0").split("/"); return { num: parseInt(pts[0]) || 0, anio: parseInt(pts[1]) || 0 }; };
