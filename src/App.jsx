@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./lib/supabase";
+import { ArchivoLink } from "./lib/archivos";
 
 const BARCOS = ["Golondrina de Mar", "Atlantic Dama"];
 const ESTADOS = {
@@ -399,7 +400,7 @@ function SolicitudModal({ sol, onClose, onItemSaved, esBarco, notify }) {
                   {it.realizado_por&&<div className="item-card-field"><div className="item-card-label">Realizado por</div><div className="item-card-value">{it.realizado_por}{it.tipo_realizacion?` (${it.tipo_realizacion})`:""}</div></div>}
                   {it.fecha_realizacion&&<div className="item-card-field"><div className="item-card-label">Fecha realización</div><div className="item-card-value">{fmtDate(it.fecha_realizacion)}</div></div>}
                   {it.nro_remito&&<div className="item-card-field"><div className="item-card-label">N° Remito</div><div className="item-card-value" style={{fontFamily:"var(--mono)",color:"var(--blue)"}}>{it.nro_remito}</div></div>}
-                  {it.adjunto_url&&<div className="item-card-field"><div className="item-card-label">Adjunto</div><a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e=>e.stopPropagation()}>📎 Ver archivo →</a></div>}
+                  {it.adjunto_url&&<div className="item-card-field"><div className="item-card-label">Adjunto</div><ArchivoLink href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e=>e.stopPropagation()}>📎 Ver archivo →</ArchivoLink></div>}
                 </div>
               )}
             </div>
@@ -448,7 +449,7 @@ function ItemModal({ item, onClose, onSave, esBarco }) {
           </div>
           <FG label="Observaciones del Capitán/JDM" full><textarea value={form.obs_capitan||""} onChange={e=>set("obs_capitan",e.target.value)} placeholder="Comentarios del embarcado..." /></FG>
           {!esBarco&&<FG label="Observaciones del Superintendente" full><textarea value={form.obs_superintendente||""} onChange={e=>set("obs_superintendente",e.target.value)} placeholder="Comentarios del superintendente técnico..."/></FG>}
-          {item.adjunto_url&&<div className="mt12"><div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"var(--muted)",textTransform:"uppercase",marginBottom:4}}>Adjunto</div><a href={item.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link">📎 Ver archivo adjunto →</a></div>}
+          {item.adjunto_url&&<div className="mt12"><div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"var(--muted)",textTransform:"uppercase",marginBottom:4}}>Adjunto</div><ArchivoLink href={item.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link">📎 Ver archivo adjunto →</ArchivoLink></div>}
         </div>
         <div className="mftr">
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
@@ -612,7 +613,7 @@ function SolicitudCard({ sol, onVerDetalle, onItemClick, esBarco, notify, onRefr
                     <td className="item-remito">{it.nro_remito||"—"}</td>
                     <td className="item-obs-cell">{it.obs_capitan||"—"}</td>
                     {!esBarco && <td className="item-obs-cell">{it.obs_superintendente||"—"}</td>}
-                    <td>{it.adjunto_url?<a href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e=>e.stopPropagation()}>📎 Ver</a>:"—"}</td>
+                    <td>{it.adjunto_url?<ArchivoLink href={it.adjunto_url} target="_blank" rel="noreferrer" className="adjunto-link" onClick={e=>e.stopPropagation()}>📎 Ver</ArchivoLink>:"—"}</td>
                     {esBarco && <td onClick={e=>e.stopPropagation()}><ItemAccionesBarco item={it} notify={notify} onUpdated={onRefresh} onEliminar={onRefresh} /></td>}
                   </tr>
                 ))
