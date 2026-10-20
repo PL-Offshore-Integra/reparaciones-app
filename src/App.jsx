@@ -17,8 +17,8 @@ const SISTEMAS = [
   "Casco","Cañerías","Equipos de radio","Propulsión y gobierno",
 ];
 const ERP_URL = "https://erp-portal-fawn.vercel.app";
-const SUPABASE_URL = "https://mwrhonkvcyyueixbdrat.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmhvbmt2Y3l5dWVpeGJkcmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTQ1NTMsImV4cCI6MjA5MjU3MDU1M30.LGtCgh7vedh16DATQtJMLBmfhzLwlj21sXsV43001IM";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const BARCO_POR_EMAIL = {
   "golondrinademar@ploffshore.com": "Golondrina de Mar",
   "atlanticdama@ploffshore.com": "Atlantic Dama",
